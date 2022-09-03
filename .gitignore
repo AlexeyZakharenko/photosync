@@ -143,4 +143,5 @@ Blog
 About
 
 photosync.db
-/cache
+cache
+.vscode
