@@ -145,3 +145,5 @@ About
 photosync.db
 cache
 .vscode
+google-credentials.json
+google-client_secret.json
