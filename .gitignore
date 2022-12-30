@@ -142,8 +142,8 @@ Training
 Blog
 About
 
-photosync.db
-cache
 .vscode
+*.db
+cache
 google-credentials.json
 google-client_secret.json

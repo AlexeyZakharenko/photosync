@@ -3,18 +3,24 @@
 
 import sqlite3
 
+from os import path
+from pathlib import Path
+
 import Log
 
 class DB(object):
 
     def __init__(self, dbfile):
+        dir = path.split(path.abspath(dbfile))
+        Path(dir[0]).mkdir(parents=True, exist_ok=True)
         self._filename = dbfile
         self._connection = sqlite3.connect(self._filename)
         Log.Write(f"Connect to SQLite DB '{self._filename}'")
         
     def __del__(self):
-        self._connection.close()
-        Log.Write(f"Disconnect from SQLite DB '{self._filename}'")
+        if hasattr(self,"_connection"):
+            self._connection.close()
+            Log.Write(f"Disconnect from SQLite DB '{self._filename}'")
     
 
     def CreateDB(self):

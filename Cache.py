@@ -2,7 +2,6 @@
 # -*- coding: UTF-8 -*-
 
 from pathlib import Path
-import shutil
 
 import Log
 
