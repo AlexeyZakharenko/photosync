@@ -46,5 +46,4 @@ class DB(object):
         cursor.execute("SELECT COUNT(*) AS NRECORDS FROM photos")
         records = cursor.fetchall()
         Log.Write(f"Table 'photos' has {records[0][0]} records")
-        return
 

@@ -6,6 +6,7 @@ import argparse
 
 import SQLite
 import Cache
+import Google
 
 
 def Invoke():
@@ -15,6 +16,7 @@ def Invoke():
     parser.add_argument('command', nargs='?', default=Help)
     parser.add_argument('--dbfile', default=Default.DBFile)
     parser.add_argument('--cache', default=Default.CacheDir)
+    parser.add_argument('--privatedir', default=Default.PrivateDir)
 
     parameters = parser.parse_args (sys.argv[1:])
     
@@ -37,6 +39,7 @@ Options:
 
 --dbfile    SQLite database file. By default '{Default.DBFile}'
 --cache     Cache directory. By default '{Default.CacheDir}'
+--privatedir     Directory for private files (session tokens). By default '{Default.PrivateDir}'
 """)
 
 
@@ -44,6 +47,8 @@ Options:
 Help = 'help'
 Reset = 'reset'
 Info = 'info'
+Get = 'get'
+
 
 def InvokeReset(parameters):
     db = SQLite.DB(parameters.dbfile)
@@ -51,22 +56,32 @@ def InvokeReset(parameters):
     db.CreateDB()
     cache = Cache.Cache(parameters.cache)
     cache.Clear()
+    src = Google.Google(parameters.privatedir)
+    src.Clear()
 
 def InvokeInfo(parameters):
     db = SQLite.DB(parameters.dbfile)
+    cache = Cache.Cache(parameters.cache)
+    src = Google.Google(parameters.privatedir)
     db.GetInfo()
+    cache.GetInfo()
+    src.GetInfo()
 
 def InvokeGet(parameters):
     cache = Cache.Cache(parameters.cache)
-
+    src = Google.Google(parameters.privatedir)
+    
 
 Invokable = {
     Help : InvokeHelp,
     Reset: InvokeReset,
-    Info: InvokeInfo
+    Info: InvokeInfo,
+    Get: InvokeGet
 }
+
 
 class Default:
     DBFile = 'photosync.db'
     CacheDir = 'cache/' 
+    PrivateDir = 'private/' 
 

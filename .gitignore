@@ -145,5 +145,6 @@ About
 .vscode
 *.db
 cache
+private
 google-credentials.json
 google-client_secret.json
