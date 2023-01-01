@@ -68,8 +68,8 @@ def InvokeInfo(parameters):
     src.GetInfo()
 
 def InvokeGet(parameters):
-    cache = Cache.Cache(parameters.cache)
     src = Google.Google(parameters.privatedir)
+    items = src.GetItemsInfo()
     
 
 Invokable = {

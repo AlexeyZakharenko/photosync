@@ -3,6 +3,10 @@
 
 import datetime
 
-def Write(string):
-    now = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    print(f"{now}\t{string}")
+def Write(string, date=datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"),  end='\n'):
+    if date != None:
+        date = f"{date}\t"
+    else:
+        date = ''
+        
+    print(f"{date}{string}", end=end)

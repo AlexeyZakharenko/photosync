@@ -8,6 +8,9 @@ from pathlib import Path
 
 import Log
 
+TABLE_ITEMS = 'items'
+TABLE_ALBUMS = 'albums'
+
 class DB(object):
 
     def __init__(self, dbfile):
@@ -24,26 +27,41 @@ class DB(object):
     
 
     def CreateDB(self):
-        Log.Write("Creating table 'photos'...")
+        Log.Write(f"Creating table '{TABLE_ITEMS}'...", end='')
         cursor = self._connection.cursor()        
-        cursor.execute("""CREATE TABLE IF NOT EXISTS photos(
-   pictireid INT PRIMARY KEY,
-   srcname TEXT,
-   dstname TEXT)
+        cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ITEMS}(
+   srcid TEXT PRIMARY KEY,
+   filename TEXT,
+   dstid TEXT)
     """)
         self._connection.commit()
-        Log.Write("Table 'photos' created")
+        Log.Write("Ok!", date=None)
+
+        Log.Write(f"Creating table '{TABLE_ALBUMS}'...", end='')
+        cursor = self._connection.cursor()        
+        cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ALBUMS}(
+   albumid TEXT PRIMARY KEY,
+   title TEXT,
+   itemid TEXT)
+    """)
+        self._connection.commit()
+        Log.Write("Ok!", date=None)
 
     def DeleteDB(self):
-        Log.Write("Deleting table 'photos'...")
+        Log.Write(f"Deleting table '{TABLE_ITEMS}'...", end='')
         cursor = self._connection.cursor()        
-        cursor.execute("DROP TABLE IF EXISTS photos")
+        cursor.execute(f"DROP TABLE IF EXISTS {TABLE_ITEMS}")
         self._connection.commit()
-        Log.Write("Table 'photos' deleted")
+        Log.Write("Ok!", date=None)
+        Log.Write(f"Deleting table '{TABLE_ALBUMS}'...", end='')
+        cursor = self._connection.cursor()        
+        cursor.execute(f"DROP TABLE IF EXISTS {TABLE_ALBUMS}")
+        self._connection.commit()
+        Log.Write("Ok!", date=None)
 
     def GetInfo(self):
         cursor = self._connection.cursor()        
-        cursor.execute("SELECT COUNT(*) AS NRECORDS FROM photos")
+        cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_ITEMS}")
         records = cursor.fetchall()
-        Log.Write(f"Table 'photos' has {records[0][0]} records")
+        Log.Write(f"Table '{TABLE_ITEMS}' has {records[0][0]} records")
 
