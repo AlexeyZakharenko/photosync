@@ -146,5 +146,4 @@ About
 *.db
 cache
 private
-google-credentials.json
-google-client_secret.json
+*.session.sql

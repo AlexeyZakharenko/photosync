@@ -26,6 +26,29 @@ API_VERSION = 'v1'
 SCOPES = ['https://www.googleapis.com/auth/photoslibrary']
 
 
+# Фильтр на полгода
+BODY = {
+    "filters": {
+        "dateFilter": {
+            "ranges": [
+                {
+                    "startDate": {
+                        "year": 2022,
+                        "month": 12,
+                        "day": 1
+                    },
+                    "endDate": {
+                        "year": 2022,
+                        "month": 12,
+                        "day": 31
+                    }
+                }
+            ]
+        }
+    }        
+}
+BODY = {}
+
 class Google:
 
     def __init__(self, privatedir):
@@ -33,10 +56,10 @@ class Google:
         Path(self._privatedir).mkdir(parents=True, exist_ok=True)
         if not path.exists(path.join(self._privatedir, CLIENT_SECRET_FILE)):
             raise Exception(f"Please set up Google Photos Library API accroding this manual: https://developers.google.com/docs/api/quickstart/python, create OAuth credentails and save JSON as {path.join(self._privatedir, CLIENT_SECRET_FILE)}")
+
     def Connect(self):
         if hasattr(self,"_service"):
             return
-
         try:
 
             creds = None
@@ -61,7 +84,6 @@ class Google:
         
         except HttpError as err:
             Log.Write(f"Can't connect to Google service: {err}")
-         
 
     def __del__(self):
         if hasattr(self,"_service"):
@@ -70,16 +92,19 @@ class Google:
 
     def GetInfo(self):
         self.Connect()
-        items = self.GetItemsInfo()
+        items = self.GetItemsInfo(body = BODY)
         albums = self.GetAlbumsInfo()
         Log.Write(f"Google service contains {len(items)} items and {len(albums)} albums")
 
 
     def GetItemsInfo(self, body = {}):
         self.Connect()
+
+        #it = self._service.mediaItems().get(mediaItemId = 'AFK8nT5GkY5Nsw9i000PuXAZk4bcddCHWxaKJohdysvXz6q7abvvswG8R6jqchAKZ9xT7LzyvvZ8EMUMwbtneDjsW33YyN38ZA').execute()
+
         body["pageSize"] = 100
         result = []
-        Log.Write(f"Get items info from Google service:", end='')
+        Log.Write(f"Getting items info from Google service...")
         try:
             nextPageToken = None
             n = 0
@@ -90,25 +115,22 @@ class Google:
                 items = request.get('mediaItems', [])
                 nextPageToken = request.get('nextPageToken', '')
                 for item in items:
-                    result.append(Item.Item(item['id'], item['filename']))    
-                n += 1
-                if n % 10 == 1: 
-                    Log.Write(f".", date=None, end='')
+                    result.append(Item.Item(item['id'], item['filename']))
+                    if len(result) % 1000 == 0:
+                        Log.Write(f"Got info for {len(result)} items")
 
-            Log.Write(f"Ok!", date=None, end='')
+            Log.Write(f"Successfully got info for {len(result)} items")
 
         except HttpError as err:
-            Log.Write(f"Can't get items info from Google service: {err}", date=None, end='')
+            Log.Write(f"ERROR Can't get items info from Google service: {err}")
 
-        finally:
-            Log.Write("", date=None)
 
         return result
 
     def GetAlbumsInfo(self):
         self.Connect()
         result = []
-        Log.Write(f"Get albums info from Google service:", end='')
+        Log.Write(f"Getting albums info from Google service...")
         try:
             nextPageToken = None
             while nextPageToken != '':
@@ -136,15 +158,14 @@ class Google:
                         for ai in albumItems:
                             album._items.append(ai['id'])        
                     result.append(album)    
-                    
-                Log.Write(f".", date=None, end='')
+                    if len(result) % 10 == 0:
+                        Log.Write(f"Got info for {len(result)} albums")
 
-            Log.Write(f"Ok!", date=None, end='')
+
+            Log.Write(f"Successfully got info for {len(result)} albums")
 
         except HttpError as err:
-            Log.Write(f"Can't get album info from Google service: {err}", date=None, end='')
+            Log.Write(f"ERROR Can't get album info from Google service: {err}")
 
-        finally:
-            Log.Write("", date=None)
 
         return result

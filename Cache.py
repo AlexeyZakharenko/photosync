@@ -14,7 +14,6 @@ class Cache:
 
 
     def Clear(self):
-        Log.Write(f"Clearing cache '{self._cachedir}'")
         remove(self._cachedir)
         Path(self._cachedir).mkdir(parents=True, exist_ok=True)
         Log.Write(f"Cache '{self._cachedir}' cleared")
