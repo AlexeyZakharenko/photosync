@@ -11,12 +11,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.errors import HttpError
 
 from pathlib import Path
-from os import path, remove
-from json import loads
+from os import path
 
-import Log
-import Item
-import Album
+import Modules.Log as Log
+import Modules.Item as Item
+import Modules.Album as Album
 
 CLIENT_SECRET_FILE = 'google-client_secret.json'
 TOKEN_FILE = 'google-token.json'
@@ -61,7 +60,6 @@ class Google:
         if hasattr(self,"_service"):
             return
         try:
-
             creds = None
             # Get credentials
             if path.exists(path.join(self._privatedir, TOKEN_FILE)):
@@ -92,14 +90,16 @@ class Google:
 
     def GetInfo(self):
         self.Connect()
-        items = self.GetItemsInfo(body = BODY)
+        items = self.GetItemsInfo(body = {})
         albums = self.GetAlbumsInfo()
         Log.Write(f"Google service contains {len(items)} items and {len(albums)} albums")
 
 
-    def GetItemsInfo(self, body = {}):
+    def GetItemsInfo(self):
         self.Connect()
 
+        body = BODY
+        
         #it = self._service.mediaItems().get(mediaItemId = 'AFK8nT5GkY5Nsw9i000PuXAZk4bcddCHWxaKJohdysvXz6q7abvvswG8R6jqchAKZ9xT7LzyvvZ8EMUMwbtneDjsW33YyN38ZA').execute()
 
         body["pageSize"] = 100

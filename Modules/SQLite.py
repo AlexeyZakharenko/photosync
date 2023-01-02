@@ -6,9 +6,7 @@ import sqlite3
 from os import path
 from pathlib import Path
 
-import Log
-import Item
-import Album
+import Modules.Log as Log
 
 TABLE_ITEMS = 'items'
 TABLE_ALBUMS = 'albums'
@@ -20,16 +18,19 @@ class DB(object):
         dir = path.split(path.abspath(dbfile))
         Path(dir[0]).mkdir(parents=True, exist_ok=True)
         self._filename = dbfile
-        self._connection = sqlite3.connect(self._filename)
-        Log.Write(f"Connect to SQLite DB '{self._filename}'")
         
+    def _connect(self):
+        if not hasattr(self,"_connection"):
+            self._connection = sqlite3.connect(self._filename)
+            Log.Write(f"Connect to SQLite DB '{self._filename}'")
+
     def __del__(self):
         if hasattr(self,"_connection"):
             self._connection.close()
             Log.Write(f"Disconnect from SQLite DB '{self._filename}'")
-    
 
     def CreateDB(self):
+        self._connect()
         cursor = self._connection.cursor()        
 
         cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ITEMS}(
@@ -57,6 +58,7 @@ class DB(object):
         Log.Write(f"Table '{TABLE_LINKS}' created")
 
     def DeleteDB(self):
+        self._connect()
         cursor = self._connection.cursor()        
         cursor.execute(f"DROP TABLE IF EXISTS {TABLE_LINKS}")
         self._connection.commit()
@@ -70,6 +72,7 @@ class DB(object):
         Log.Write(f"Table '{TABLE_ALBUMS}' deleted")
 
     def GetInfo(self):
+        self._connect()
         cursor = self._connection.cursor()        
         cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_ITEMS}")
         itemRecords = cursor.fetchall()
@@ -80,6 +83,7 @@ class DB(object):
         Log.Write(f"Table records info: '{TABLE_ITEMS}':{itemRecords[0][0]}, '{TABLE_ALBUMS}':{albumRecords[0][0]}, '{TABLE_LINKS}':{linksRecords[0][0]}")
 
     def UpdateItems(self,items):
+        self._connect()
         Log.Write(f"Insert {len(items)} records into '{TABLE_ITEMS}'...")
         try:
             cursor = self._connection.cursor()
@@ -102,13 +106,14 @@ class DB(object):
                     Log.Write(f"{total} records processed")
 
             self._connection.commit()
-            Log.Write(f"{total} records processed, {skipped} skipped, {inserted} inserted into '{TABLE_ITEMS}'...")
+            Log.Write(f"{total} records processed, {skipped} skipped, {inserted} inserted into '{TABLE_ITEMS}'")
         
         except Exception as err:
             self._connection.rollback()
             Log.Write(f"ERROR Can't insert records: {err}")
         
     def UpdateAlbums(self,albums):
+        self._connect()
         Log.Write(f"Insert {len(albums)} records into '{TABLE_ALBUMS}'...")
         try:
             cursor = self._connection.cursor()
@@ -138,7 +143,7 @@ class DB(object):
                     Log.Write(f"{total} albums processed")
 
             self._connection.commit()
-            Log.Write(f"{total} albums processed, {skipped} skipped, {inserted} inserted into '{TABLE_ALBUMS}', {linked} records added into '{TABLE_LINKS}'...")
+            Log.Write(f"{total} albums processed, {skipped} skipped, {inserted} inserted into '{TABLE_ALBUMS}', {linked} records added into '{TABLE_LINKS}'")
         
         except Exception as err:
             self._connection.rollback()

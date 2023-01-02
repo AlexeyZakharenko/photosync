@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-import Log
+import Modules.Log as Log
 
 class Local:
 

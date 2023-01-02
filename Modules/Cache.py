@@ -3,14 +3,13 @@
 
 from pathlib import Path
 from os import listdir, path, remove
-import Log
+import Modules.Log as Log
 
 class Cache:
 
     def __init__(self, cachedir):
         self._cachedir = cachedir
         Path(self._cachedir).mkdir(parents=True, exist_ok=True)
-        Log.Write(f"Use cache {self._cachedir}")
 
 
     def Clear(self):
