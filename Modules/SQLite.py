@@ -3,6 +3,8 @@
 
 import sqlite3
 
+import atexit
+
 from os import path
 from pathlib import Path
 
@@ -18,13 +20,15 @@ class DB(object):
         dir = path.split(path.abspath(dbfile))
         Path(dir[0]).mkdir(parents=True, exist_ok=True)
         self._filename = dbfile
-        
+        atexit.register(self.__close)
+
+
     def _connect(self):
         if not hasattr(self,"_connection"):
             self._connection = sqlite3.connect(self._filename)
             Log.Write(f"Connect to SQLite DB '{self._filename}'")
 
-    def __del__(self):
+    def __close(self):
         if hasattr(self,"_connection"):
             self._connection.close()
             Log.Write(f"Disconnect from SQLite DB '{self._filename}'")
@@ -36,7 +40,8 @@ class DB(object):
         cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ITEMS}(
    srcId TEXT PRIMARY KEY,
    filename TEXT,
-   dstId TEXT)
+   dstId TEXT,
+   syncronized INTEGER)
     """)
         self._connection.commit()
         Log.Write(f"Table '{TABLE_ITEMS}' created")
@@ -49,10 +54,9 @@ class DB(object):
         Log.Write(f"Table '{TABLE_ALBUMS}' created")
 
         cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_LINKS}(
-   albumId TEXT,
-   itemId TEXT,
-   FOREIGN KEY(albumId) REFERENCES {TABLE_ALBUMS}(albumId),
-   FOREIGN KEY(itemId) REFERENCES {TABLE_ITEMS}(srId))
+   albumId TEXT NOT NULL,
+   itemId TEXT NOT NULL,
+   syncronized INTEGER NOT NULL)
     """)
         self._connection.commit()
         Log.Write(f"Table '{TABLE_LINKS}' created")
@@ -84,7 +88,7 @@ class DB(object):
 
     def UpdateItems(self,items):
         self._connect()
-        Log.Write(f"Insert {len(items)} records into '{TABLE_ITEMS}'...")
+        Log.Write(f"Inserting {len(items)} records into '{TABLE_ITEMS}'...")
         try:
             cursor = self._connection.cursor()
             total = 0
@@ -96,7 +100,7 @@ class DB(object):
                 cursor.execute(f"SELECT * FROM {TABLE_ITEMS} WHERE srcId == ?", (item._id,))
                 found = cursor.fetchone()
                 if found is None:
-                    cursor.execute(f"INSERT INTO {TABLE_ITEMS} (srcId, filename) VALUES (?, ?)", (item._id, item._filename,))
+                    cursor.execute(f"INSERT INTO {TABLE_ITEMS} (srcId, filename, syncronized) VALUES (?, ?, ?)", (item._id, item._filename, 0,))
                     inserted += 1
                 else:
                     skipped += 1
@@ -114,7 +118,7 @@ class DB(object):
         
     def UpdateAlbums(self,albums):
         self._connect()
-        Log.Write(f"Insert {len(albums)} records into '{TABLE_ALBUMS}'...")
+        Log.Write(f"Inserting {len(albums)} records into '{TABLE_ALBUMS}'...")
         try:
             cursor = self._connection.cursor()
             total = 0
@@ -123,7 +127,7 @@ class DB(object):
             linked = 0;
 
             for album in albums:
-                cursor.execute(f"SELECT * FROM {TABLE_ALBUMS} WHERE albumId == ?", (album._id, ))
+                cursor.execute(f"SELECT * FROM {TABLE_ALBUMS} WHERE albumId == ?", (album._id,))
                 found = cursor.fetchone()
                 if found is None:
                     cursor.execute(f"INSERT INTO {TABLE_ALBUMS} (albumId, title) VALUES (?, ?)", (album._id, album._title,))
@@ -132,10 +136,17 @@ class DB(object):
                     skipped += 1
 
                 for item in album._items:    
-                    cursor.execute(f"SELECT * FROM {TABLE_LINKS} WHERE albumId == ? AND itemId = ?", (album._id, item))
+
+                    # Looking for items table
+                    cursor.execute(f"SELECT * FROM {TABLE_ITEMS} WHERE srcId = ?", (item,))
                     found = cursor.fetchone()
                     if found is None:
-                        cursor.execute(f"INSERT INTO {TABLE_LINKS} (albumId, itemId) VALUES (?, ?)", (album._id, item,))
+                        continue
+
+                    cursor.execute(f"SELECT * FROM {TABLE_LINKS} WHERE albumId == ? AND itemId = ?", (album._id, item,))
+                    found = cursor.fetchone()
+                    if found is None:
+                        cursor.execute(f"INSERT INTO {TABLE_LINKS} (albumId, itemId, syncronized) VALUES (?, ?, ?)", (album._id, item, 0,))
                         linked += 1
 
                 total += 1

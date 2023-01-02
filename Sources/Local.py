@@ -7,6 +7,9 @@ import Modules.Log as Log
 
 class Local:
 
+    def GetType(self):
+        return f"Local ({self._rootdir})"
+
     def __init__(self, rootdir):
         self._rootdir = rootdir
         Path(self._rootdir).mkdir(parents=True, exist_ok=True)
