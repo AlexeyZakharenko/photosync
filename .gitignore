@@ -146,4 +146,5 @@ About
 *.db
 cache
 private
+photos
 *.session.sql

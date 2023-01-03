@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 # How to set up API see https://developers.google.com/docs/api/quickstart/python
-# Save as a google-client_secret.json to the project's private directory
+# Save config file as a google-client_secret.json to the private directory (private/ by default)
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -12,9 +12,11 @@ from googleapiclient.errors import HttpError
 
 from pathlib import Path
 from os import path
-from datetime import datetime
+from datetime import datetime, timezone
 
-import atexit
+from requests import get
+
+from atexit import register
 
 import Modules.Log as Log
 import Modules.Item as Item
@@ -33,11 +35,11 @@ class Google:
         return f"Google ({path.join(self._privatedir, CLIENT_SECRET_FILE)})"
 
     def __init__(self, privatedir):
-        self._privatedir = privatedir
+        self._privatedir = path.normpath(privatedir)
         Path(self._privatedir).mkdir(parents=True, exist_ok=True)
         if not path.exists(path.join(self._privatedir, CLIENT_SECRET_FILE)):
             raise Exception(f"Please set up Google Photos Library API accroding this manual: https://developers.google.com/docs/api/quickstart/python, create OAuth credentails and save JSON as {path.join(self._privatedir, CLIENT_SECRET_FILE)}")
-        atexit.register(self.__close)
+        register(self.__close)
 
 
     def Connect(self):
@@ -118,9 +120,6 @@ class Google:
 
     def GetItemsInfo(self, start=None, end=None):
         self.Connect()
-
-        #it = self._service.mediaItems().get(mediaItemId = 'AFK8nT5GkY5Nsw9i000PuXAZk4bcddCHWxaKJohdysvXz6q7abvvswG8R6jqchAKZ9xT7LzyvvZ8EMUMwbtneDjsW33YyN38ZA').execute()
-
         result = []
         Log.Write(f"Getting items info from Google service...")
         try:
@@ -169,7 +168,7 @@ class Google:
 
                         nextAlbumToken = '' if nextAlbumToken == None else nextAlbumToken
                         albumRequest = self._service.mediaItems().search(body = {
-                            "albumId": album._id,
+                            "albumId": album.SrcId,
                             "pageSize": 100,
                             "pageToken": nextAlbumToken
                         }).execute()
@@ -178,7 +177,7 @@ class Google:
                         albumItems = albumRequest.get('mediaItems', [])
                         nextAlbumToken = albumRequest.get('nextPageToken', '')
                         for ai in albumItems:
-                            album._items.append(ai['id'])        
+                            album.Items.append(ai['id'])        
                     result.append(album)   
                     n += 1 
                     if n % 10 == 0:
@@ -204,14 +203,14 @@ class Google:
                     while nextAlbumToken != '':
                         nextAlbumToken = '' if nextAlbumToken == None else nextAlbumToken
                         albumRequest = self._service.mediaItems().search(body = {
-                            "albumId": album._id,
+                            "albumId": album.SrcId,
                             "pageSize": 100,
                             "pageToken": nextAlbumToken
                         }).execute()
                         albumItems = albumRequest.get('mediaItems', [])
                         nextAlbumToken = albumRequest.get('nextPageToken', '')
                         for ai in albumItems:
-                            album._items.append(ai['id'])        
+                            album.Items.append(ai['id'])        
                     result.append(album)    
                     n += 1
                     if n % 10 == 0:
@@ -226,3 +225,35 @@ class Google:
 
 
         return result
+
+    def _getDateTime(dateString):
+        if dateString[-1:] == 'Z':
+            return datetime.fromisoformat(dateString[:-1])
+            #return dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
+        else:
+            return datetime.fromisoformat(dateString)
+
+    def GetItem(self, item, cache):
+        self.Connect()
+        try:
+            itemInfo = self._service.mediaItems().get(mediaItemId = item.SrcId).execute()
+            item.Created = Google._getDateTime(itemInfo['mediaMetadata']['creationTime'])
+            if not itemInfo['mediaMetadata'].get('video',None) is None:
+                if itemInfo['mediaMetadata']['video']['status'] != 'READY':
+                    raise Exception(f"Invalid video status '{itemInfo['mediaMetadata']['video']['status']}'")
+                dKey = "dv"
+            else:
+                dKey = "d"
+            request = get(f"{itemInfo['baseUrl']}={dKey}")
+            if not request.ok:
+                raise Exception(f"{request.reason} ({request.status_code})")
+
+            cache.Store(item.SrcId, request.content)
+            Log.Write(f"Got item '{item.Filename}' {len(request.content)}b ({item.SrcId})")
+
+        except Exception as err:
+            Log.Write(f"ERROR Can't get item '{item.Filename}' from Google service: {err}")
+            return False
+
+        return True
+

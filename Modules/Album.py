@@ -2,7 +2,8 @@
 # -*- coding: UTF-8 -*-
 
 class Album():
-    def __init__(self, id, title):
-        self._id = id
-        self._title = title
-        self._items = []
+    def __init__(self, srcId, title, dstId=None):
+        self.SrcId = srcId
+        self.Title = title
+        self.DstId = dstId
+        self.Items = []
