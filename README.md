@@ -3,6 +3,16 @@
 
 Основная фича - умеет сохранять структуру альбомов.
 
-Для работы требует клиента Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project)
+Для работы необходимы клиент Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project)
 
-Перед началом работы обязательно сделайте 'photosync.py reset'!
+Как начать работу:
+
+1) Скачать проект
+2) Поставить библиотеки Google API:
+   pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+3) Настроить проект c Photos Library API, создать для него OAuth 2.0 Client Сredentials (scope: https://www.googleapis.com/auth/photoslibrary)
+   и сохранить его json в подпапку /private проекта: private/google-client_secret.json
+4) Выполнить 'photosync.py reset'
+5) Изучить 'photosync.py -h'
+6) Попробовать запустить 'photosync.py sync', при необходимости указав параметры
+
