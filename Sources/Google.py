@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+# Required https://github.com/googleapis/google-api-python-client
+
 # How to set up API see https://developers.google.com/docs/api/quickstart/python
 # Save config file as a google-client_secret.json to the private directory (private/ by default)
 
