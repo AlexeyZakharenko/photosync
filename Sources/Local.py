@@ -30,7 +30,15 @@ class Local:
         
         #Generate new title
         try:
-            dstId = path.join(self._rootdir,PHOTOS_PATH,item.Filename);
+
+            created = Local._getSeconds(item.Created)
+            
+            dstPath = path.join(self._rootdir,PHOTOS_PATH,item.Created.strftime("%Y-%m"))
+            if not path.isdir(dstPath):
+                Path(dstPath).mkdir(parents=True, exist_ok=True)
+
+
+            dstId = path.join(dstPath,item.Filename);
             (name, ext) = path.splitext(dstId)
             n=0
             while path.isfile(dstId):
@@ -40,7 +48,7 @@ class Local:
             item.DstId = dstId
 
             open(item.DstId, 'wb').write(cache.Get(item.SrcId))
-            utime(item.DstId, (Local._getSeconds(item.Created), Local._getSeconds(item.Created)))
+            utime(item.DstId, (created, created))
             Log.Write(f"Put item '{item.Filename}' ({item.DstId})")
 
             cache.Remove(item.SrcId)
