@@ -143,6 +143,9 @@ class Google:
 
         except HttpError as err:
             Log.Write(f"ERROR Can't get items info from Google service: {err}")
+            if err.status_code == 429:
+                raise Exception("Quota exceeded for Google service")
+
 
 
         return result
@@ -224,6 +227,8 @@ class Google:
 
         except HttpError as err:
             Log.Write(f"ERROR Can't get album info from Google service: {err}")
+            if err.status_code == 429:
+                raise Exception("Quota exceeded for Google service")
 
 
         return result
@@ -252,6 +257,12 @@ class Google:
 
             cache.Store(item.SrcId, request.content)
             Log.Write(f"Got item '{item.Filename}' {len(request.content)}b ({item.SrcId})")
+
+        except HttpError as err:
+            Log.Write(f"ERROR Can't get item '{item.Filename}' from Google service: {err}")
+            if err.status_code == 429:
+                raise Exception("Quota exceeded for Google service")
+            return False
 
         except Exception as err:
             Log.Write(f"ERROR Can't get item '{item.Filename}' from Google service: {err}")
