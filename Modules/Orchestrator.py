@@ -49,15 +49,17 @@ class Orchestrator:
         Log.Write("Resetting local environment...")
         self._db.DeleteDB()
         self._db.CreateDB()
+        self._cache.Clean()
         return True;
 
     def _invokeClean(self):
         Log.Write("Clean sync results...")
         self._db.Clean()
+        self._cache.Clean()
         return True;
 
     def _invokeInfo(self):
-        Log.Write(f"Source: {self._src.GetType()}, destignation: {self._dst.GetType()}")
+        Log.Write(f"Source: {self._src.GetType()}, designation: {self._dst.GetType()}")
         self._db.GetInfo()
         return True
    
@@ -87,7 +89,7 @@ class Orchestrator:
                     self._db.MarkItemSync(item)
                     n += 1
 
-            Log.Write(f"Put {n} of {len(items)} items from source {self._src.GetType()} to {self._dst.GetType()}, {len(items)-n} items skipped")
+            Log.Write(f"Put {n} of {len(items)} items from {self._src.GetType()} to {self._dst.GetType()}, {len(items)-n} items skipped")
 
     def _putLinks(self):
 
@@ -117,11 +119,11 @@ class Orchestrator:
                     n += 1
 
 
-            Log.Write(f"Put {n} of {len(links)} links and {nAlbums} albums from source {self._src.GetType()} to {self._dst.GetType()}, {len(links)-n} links skipped")
+            Log.Write(f"Put {n} of {len(links)} links and {nAlbums} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(links)-n} links skipped")
 
     def _invokePut(self):
 
-        Log.Write(f"Putting data from source {self._src.GetType()} to {self._dst.GetType()}...")
+        Log.Write(f"Putting data from {self._src.GetType()} to {self._dst.GetType()}...")
 
         self._putItems()
         if self._scope == 'all':
