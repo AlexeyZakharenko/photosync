@@ -10,7 +10,9 @@
 
 Для работы необходимы клиент Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project).
 
-Забирает все медиафайлы, включая коллажи и анимации, в максимально доступном качестве. Геолокации Google не отдает, поэтому без них.
+По умолчанию ищет JSON-файл клиента в _private/google-client_secret.json_.
+
+Забирает все медиафайлы, включая созданные гуглом коллажи и анимации, в максимально доступном качестве. Геолокации Google не отдает, поэтому без них.
 
 ### Local
 Локальное хранилище. Пока используется как приемник.
