@@ -5,8 +5,6 @@ from pathlib import Path
 from shutil import rmtree
 from os import listdir, path, unlink
 
-from atexit import register
-
 import Modules.Log as Log
 
 
@@ -15,7 +13,6 @@ class Cache:
     def __init__(self, cachedir):
         self._cachedir = path.normpath(cachedir)
         Path(self._cachedir).mkdir(parents=True, exist_ok=True)
-        register(self.Clean)
 
     def Store(self, filename, content):
         open(path.join(self._cachedir, filename), 'wb').write(content)
