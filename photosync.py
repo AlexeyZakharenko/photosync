@@ -23,31 +23,31 @@ class Default:
 
 try:
 
-    parser = argparse.ArgumentParser(description='Simple tool for download photo & video from the Google cloud')
+    parser = argparse.ArgumentParser(description='Simple tool for sync photo & video between various sources')
     
     parser.add_argument('command', 
             nargs='?', 
-            default='-h', 
+            choices=['info', 'clean', 'put', 'get', 'sync'], 
             type=str, 
-            help="Available commands: reset (run it at the first time!), info, clean, put, get and sync.")
+            help="Available commands. Run 'photosync.py reset' at the first time to set environment.")
 
     parser.add_argument('--src', 
             type=str, 
-            choices=['google','local'], 
+            choices=['google'], 
             default=Default.Src, 
-            help=f"Source. Can be 'google', 'yandex' or 'local'. By default '{Default.Src}'.")
+            help=f"Source. By default '{Default.Src}'.")
 
     parser.add_argument('--dst', 
             type=str, 
-            choices=['google','local'], 
+            choices=['local'], 
             default=Default.Dst, 
-            help=f"Destignation. Can be 'google', 'yandex' or 'local'. By default '{Default.Dst}'.")
+            help=f"Destignation. By default '{Default.Dst}'.")
 
     parser.add_argument('--scope', 
             type=str, 
             choices=['all','items'], 
             default=Default.Scope, 
-            help=f"Scope of sync. Can be 'all' or 'items'. By default '{Default.Scope}'.")
+            help=f"Scope of sync. By default '{Default.Scope}'.")
 
     parser.add_argument('--srcpvt', 
             type=str, 
