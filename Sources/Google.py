@@ -44,7 +44,7 @@ class Google:
         register(self.__close)
 
 
-    def Connect(self):
+    def _connect(self):
         if hasattr(self,"_service"):
             return
         try:
@@ -77,7 +77,7 @@ class Google:
             Log.Write(f"Disconnect from Google service")
 
     def GetInfo(self):
-        self.Connect()
+        self._connect()
         items = self.GetItemsInfo(body = {})
         albums = self.GetAlbumsInfo()
         Log.Write(f"Google service contains {len(items)} items and {len(albums)} albums")
@@ -121,7 +121,7 @@ class Google:
         return body
 
     def GetItemsInfo(self, start=None, end=None):
-        self.Connect()
+        self._connect()
         result = []
         Log.Write(f"Getting items info from Google service...")
         try:
@@ -148,7 +148,7 @@ class Google:
         return result
 
     def GetAlbumsInfo(self, start=None, end=None):
-        self.Connect()
+        self.Сonnect()
         result = []
 
         try:
@@ -236,7 +236,7 @@ class Google:
             return datetime.fromisoformat(dateString)
 
     def GetItem(self, item, cache):
-        self.Connect()
+        self._connect()
         try:
             itemInfo = self._service.mediaItems().get(mediaItemId = item.SrcId).execute()
             item.Created = Google._getDateTime(itemInfo['mediaMetadata']['creationTime'])
