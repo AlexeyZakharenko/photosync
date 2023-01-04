@@ -27,7 +27,7 @@ try:
     
     parser.add_argument('command', 
             nargs='?', 
-            default='-h', 
+            choices=['info', 'clean', 'put', 'get', 'sync'], 
             type=str, 
             help="Available commands: reset (run it at the first time!), info, clean, put, get and sync.")
 
