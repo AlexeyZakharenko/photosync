@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import Modules.SQLite as SQLite
 import Modules.Cache as Cache
 import Modules.Orchestrator as Orchestrator
+import Modules.Log as Log
 
 class Default:
     DBFile = 'db/photosync.db'
@@ -109,7 +110,7 @@ try:
     del orchestrator
 
 except Exception as err:
-    print("Error: {}".format(err))
+        Log.Write(f"ERROR {err}")
 
 
 
