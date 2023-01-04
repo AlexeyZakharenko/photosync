@@ -1,6 +1,22 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+# Interface for sources
+#
+# -- common methodes
+# def GetType(self) -> string
+# def GetInfo(self) -> void
+#
+# -- methodes for source
+# def GetItemsInfo(self, start=None, end=None) -> Item[] (SrcId,Filename)
+# def GetAlbumsInfo(self, start=None, end=None) -> Album[] (SrcId, Title)
+# def GetItem(self, item, cache) -> bool, set item.Created
+#
+# -- methodes for designation 
+# def PutItem(self, item, cache) -> bool, set item.DstId, 
+# def PutAlbum(self, album) -> bool, set album.DstId
+# def PutItemToAlbum(self, item, album) -> bool
+
 from pathlib import Path
 from os import path, utime, mkdir, link
 from datetime import datetime
@@ -20,7 +36,6 @@ class Local:
         Path(self._rootdir).mkdir(parents=True, exist_ok=True)
         Path(path.join(self._rootdir,PHOTOS_PATH)).mkdir(parents=True, exist_ok=True)
         Path(path.join(self._rootdir,ALBUMS_PATH)).mkdir(parents=True, exist_ok=True)
-
 
     def _getSeconds(dt):
         
