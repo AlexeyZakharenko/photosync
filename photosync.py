@@ -27,7 +27,7 @@ try:
     
     parser.add_argument('command', 
             nargs='?', 
-            choices=['info', 'clean', 'put', 'get', 'sync', 'reset      '], 
+            choices=['info', 'clean', 'put', 'get', 'sync', 'reset'], 
             type=str, 
             help="Available commands. Run 'photosync.py reset' at the first time to set environment.")
 
