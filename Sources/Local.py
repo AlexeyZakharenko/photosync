@@ -11,7 +11,7 @@
 # def GetInfo(self, start=None, end=None, scope='all') -> (Item[] ->(SrcId,Filename), Album[] -> (SrcId, Title))
 # def GetItem(self, item, cache) -> bool, set item.Created
 #
-# -- methodes for designation 
+# -- methodes for destination
 # def PutItem(self, item, cache) -> bool, set item.DstId, 
 # def PutAlbum(self, album) -> bool, set album.DstId
 # def PutItemToAlbum(self, item, album) -> bool
@@ -29,7 +29,6 @@ ALBUMS_PATH = 'albums'
 
 class Local:
 
-
     def __init__(self, rootdir):
         self._rootdir = path.normpath(rootdir)
         Path(self._rootdir).mkdir(parents=True, exist_ok=True)
@@ -37,9 +36,7 @@ class Local:
         Path(path.join(self._rootdir,ALBUMS_PATH)).mkdir(parents=True, exist_ok=True)
 
     def _getSeconds(dt):
-        
         return (dt-datetime(1970,1,1)).total_seconds()
-
     
     def _getItems(root, subDirs, items, start, end):
         subDir = ''
@@ -71,12 +68,12 @@ class Local:
             else:
                 # Это корень, не альбом
                 if albumTitle is None:
-                    continue;
+                    continue
                 # Ищем документ
                 item = next((i for i in items if i.Filename == entry), None)
                 # Не в этот раз
                 if item is None:
-                    continue;
+                    continue
 
                 # Раньше не добавляли?
                 album = next((a for a in albums if a.SrcId == subDir), None)
@@ -86,7 +83,6 @@ class Local:
                 
                 album.Items.append(item.SrcId)
 
-
     def GetInfo(self, start=None, end=None, scope='all'):
         items = []
         albums = []
@@ -95,16 +91,16 @@ class Local:
             endSec = None if end is None else Local._getSeconds(end)
 
             if scope == 'all' or scope == 'items':
-                Log.Write(f"Getting items info from Local service...")
+                Log.Write(f"Getting items info from Local...")
                 Local._getItems(path.join(self._rootdir,PHOTOS_PATH), [], items, startSec, endSec)
                 Log.Write(f"Got info for {len(items)} items")
-            if scope == 'all' or scope == 'albums' :
-                Log.Write(f"Getting albums info from Local service...")
+            if scope == 'all' or scope == 'albums':
+                Log.Write(f"Getting albums info from Local...")
                 Local._getAlbums(path.join(self._rootdir,ALBUMS_PATH), [], None, albums, items)
                 Log.Write(f"Got info for {len(albums)} albums")
 
         except Exception as err:
-            Log.Write(f"ERROR Can't get info from Local service: {err}")
+            Log.Write(f"ERROR Can't get info from Local: {err}")
 
         return (items, albums)
 
@@ -112,19 +108,20 @@ class Local:
         entryPath = path.join(self._rootdir, PHOTOS_PATH, item.SrcId)
         try:
             time = datetime.utcfromtimestamp(path.getmtime(entryPath))
-
             with open(entryPath, mode='rb') as file:
-                cache.Store(item.SrcId, file.read())
+                content = file.read()
+                size = len(content)
+                cache.Store(item.SrcId, content)
 
             item.Created = time
+            Log.Write(f"Got item '{item.Filename}' {size}b ({item.SrcId})")
+
 
         except Exception as err:
-            Log.Write(f"ERROR Can't get item '{item.SrcId}' from Local service: {err}")
+            Log.Write(f"ERROR Can't get item '{item.SrcId}' from Local: {err}")
             return False
 
         return True
-
-
 
     def PutItem(self, item, cache):
         
@@ -146,7 +143,7 @@ class Local:
             cache.Remove(item.SrcId)
 
         except Exception as err:
-            Log.Write(f"ERROR Can't put item '{item.Filename}' to Local service: {err}")
+            Log.Write(f"ERROR Can't put item '{item.Filename}' to Local: {err}")
             return False
 
         return True
@@ -159,7 +156,7 @@ class Local:
             Log.Write(f"Put album '{album.Title}' ({album.DstId})")
 
         except Exception as err:
-            Log.Write(f"ERROR Can't put album '{album.Title}' to Local service: {err}")
+            Log.Write(f"ERROR Can't put album '{album.Title}' to Local: {err}")
             return False
 
         return True
@@ -172,7 +169,7 @@ class Local:
             Log.Write(f"Put item '{item.DstId}' into album '{album.DstId}' ({targetPath})")
 
         except Exception as err:
-            Log.Write(f"ERROR Can't put item '{item.DstId}' into album '{album.DstId}' to Local service: {err}")
+            Log.Write(f"ERROR Can't put item '{item.DstId}' into album '{album.DstId}' to Local: {err}")
             return False
 
         return True
