@@ -5,7 +5,7 @@
 
 ## Доступные источники
 
-### Google Photo
+### Google
 Пока может быть только источником.
 
 Для работы необходимы клиент Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project).
