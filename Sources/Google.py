@@ -43,7 +43,7 @@ class Google:
     def __close(self):
         if hasattr(self,"_service"):
             self._service.close()
-            Log.Write(f"Disconnect from Google service")
+            Log.Write(f"Disconnect from Google")
 
     def _connect(self):
         if hasattr(self,"_service"):
@@ -70,7 +70,7 @@ class Google:
             Log.Write(f"Connected to Google Service via API {API_NAME} {API_VERSION}")
         
         except HttpError as err:
-            Log.Write(f"Can't connect to Google service: {err}")
+            Log.Write(f"Can't connect to Google: {err}")
 
     def _getBody(start, end):
 
@@ -112,7 +112,7 @@ class Google:
     def _getItemsInfo(self, start=None, end=None):
         self._connect()
         result = []
-        Log.Write(f"Getting items info from Google service...")
+        Log.Write(f"Getting items info from Google...")
         try:
             body = Google._getBody(start, end)
             nextPageToken = None
@@ -131,7 +131,7 @@ class Google:
             Log.Write(f"Successfully got info for {len(result)} items")
 
         except HttpError as err:
-            Log.Write(f"ERROR Can't get items info from Google service: {err}")
+            Log.Write(f"ERROR Can't get items info from Google: {err}")
             if err.status_code == 429:
                 raise Exception("Quota exceeded for Google service")
 
@@ -145,7 +145,7 @@ class Google:
 
         try:
             n=0;
-            Log.Write(f"Getting private albums info from Google service...")
+            Log.Write(f"Getting private albums info from Google...")
             nextPageToken = None
             while nextPageToken != '':
                 nextPageToken = '' if nextPageToken == None else nextPageToken
@@ -181,7 +181,7 @@ class Google:
                 Log.Write(f"Got info for {n} private albums")
 
             n=0
-            Log.Write(f"Getting shared albums info from Google service...")
+            Log.Write(f"Getting shared albums info from Google...")
             nextPageToken = None
             while nextPageToken != '':
                 nextPageToken = '' if nextPageToken == None else nextPageToken
@@ -215,7 +215,7 @@ class Google:
             Log.Write(f"Successfully got info for {len(result)} albums")
 
         except HttpError as err:
-            Log.Write(f"ERROR Can't get album info from Google service: {err}")
+            Log.Write(f"ERROR Can't get album info from Google: {err}")
             if err.status_code == 429:
                 raise Exception("Quota exceeded for Google service")
 
@@ -269,13 +269,13 @@ class Google:
             Log.Write(f"Got item '{item.Filename}' {len(request.content)}b ({item.SrcId})")
 
         except HttpError as err:
-            Log.Write(f"ERROR Can't get item '{item.Filename}' from Google service: {err}")
+            Log.Write(f"ERROR Can't get item '{item.Filename}' from Google: {err}")
             if err.status_code == 429:
                 raise Exception("Quota exceeded for Google service")
             return False
 
         except Exception as err:
-            Log.Write(f"ERROR Can't get item '{item.Filename}' from Google service: {err}")
+            Log.Write(f"ERROR Can't get item '{item.Filename}' from Google: {err}")
             return False
 
         return True

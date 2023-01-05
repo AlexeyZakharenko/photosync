@@ -34,7 +34,7 @@ try:
 
     parser.add_argument('--src', 
             type=str, 
-            choices=['google', 'local'], 
+            choices=['google', 'local', 'native'], 
             default=Default.Src, 
             help=f"Source. By default '{Default.Src}'.")
 

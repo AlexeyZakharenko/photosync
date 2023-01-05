@@ -3,6 +3,7 @@
 
 import Sources.Google as Google
 import Sources.Local as Local
+import Sources.Native as Native
 import Modules.Log as Log
 
 def GetSource(type, privateDir, rootDir):
@@ -10,6 +11,8 @@ def GetSource(type, privateDir, rootDir):
         return Google.Google(privateDir)
     if type == 'local':
         return Local.Local(rootDir)
+    if type == 'native':
+        return Native.Native(rootDir)
     raise Exception(f"Unsupported source type '{type}'")
 
 
@@ -46,20 +49,26 @@ class Orchestrator:
         del self._dst
 
     def _invokeReset(self):
+        if input(f"Are You sure to reset ALL data? (Yes/No) ") != 'Yes':
+            return True
         Log.Write("Resetting local environment...")
         self._db.DeleteDB()
         self._db.CreateDB()
         self._cache.Clean()
+        Log.Write("Done! Don't forget to erase destination data.")
         return True;
 
     def _invokeClean(self):
+        if input(f"Are You sure to clean {self._scope} data? (Yes/No) ") != 'Yes':
+            return True
         Log.Write("Clean sync results...")
         self._db.Clean(self._scope)
         self._cache.Clean()
+        Log.Write("Done! Don't forget to erase destination data.")
         return True;
 
     def _invokeStatus(self):
-        Log.Write(f"Source: {self._src.GetType()}, designation: {self._dst.GetType()}")
+        Log.Write(f"Source: {self._src.GetType()}, destination: {self._dst.GetType()}")
         self._db.GetStatus()
         return True
    
@@ -105,7 +114,7 @@ class Orchestrator:
                     Log.Write(f"WARNING: item '{link.ItemId}' not getted yet. Please get item info from source.")
                     continue
                 if item.DstId is None:
-                    Log.Write(f"WARNING: item '{link.ItemId}' not putted yet. Please put item to designation.")
+                    Log.Write(f"WARNING: item '{link.ItemId}' not putted yet. Please put item to destination.")
                     continue
 
                 album = self._db.GetAlbum(link.AlbumId)
