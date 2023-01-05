@@ -177,12 +177,6 @@ class DB(object):
 
                 for item in album.Items:    
 
-                    # Looking for items table
-                    cursor.execute(f"SELECT * FROM {TABLE_ITEMS} WHERE srcId = ?", (item,))
-                    found = cursor.fetchone()
-                    if found is None:
-                        continue
-
                     cursor.execute(f"SELECT * FROM {TABLE_LINKS} WHERE albumId = ? AND itemId = ?", (album.SrcId, item,))
                     found = cursor.fetchone()
                     if found is None:
