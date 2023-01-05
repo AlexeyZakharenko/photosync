@@ -16,8 +16,8 @@ def GetSource(type, privateDir, rootDir):
 class Orchestrator:
 
     def Invoke(self, command):
-        if command == 'info':
-            return self._invokeInfo()
+        if command == 'status':
+            return self._invokeStatus()
         if command == 'reset':
             return self._invokeReset()
         if command == 'clean':
@@ -54,25 +54,24 @@ class Orchestrator:
 
     def _invokeClean(self):
         Log.Write("Clean sync results...")
-        self._db.Clean()
+        self._db.Clean(self._scope)
         self._cache.Clean()
         return True;
 
-    def _invokeInfo(self):
+    def _invokeStatus(self):
         Log.Write(f"Source: {self._src.GetType()}, designation: {self._dst.GetType()}")
-        self._db.GetInfo()
+        self._db.GetStatus()
         return True
    
     def _invokeGet(self):
-        start = f" from {self._start}" if self._start != None else ""
-        end = f" to {self._end}" if self._end != None else ""
+        start = f" from {self._start.date()}" if self._start != None else ""
+        end = f" to {self._end.date()}" if self._end != None else ""
         Log.Write(f"Getting info from source {self._src.GetType()}{start}{end}...")
 
-        items = self._src.GetItemsInfo(self._start, self._end)
-        self._db.UpdateItemsInfo(items)
+        (items, albums) = self._src.GetInfo(self._start, self._end, self._scope)
 
+        self._db.UpdateItemsInfo(items)
         if self._scope == 'all':
-            albums = self._src.GetAlbumsInfo(self._start, self._end)
             self._db.UpdateAlbumsInfo(albums)
 
         return True
@@ -81,6 +80,7 @@ class Orchestrator:
         return self._invokeGet() and self._invokePut()
 
     def _putItems(self):
+        Log.Write(f"Putting items from {self._src.GetType()} to {self._dst.GetType()}...")
         items = self._db.GetItemsForSync()
         if len(items) > 0:
             n = 0 
@@ -93,6 +93,7 @@ class Orchestrator:
 
     def _putLinks(self):
 
+        Log.Write(f"Putting albums from {self._src.GetType()} to {self._dst.GetType()}...")
         links = self._db.GetLinksForSync()
         if len(links) > 0:
             n = 0 
@@ -125,8 +126,9 @@ class Orchestrator:
 
         Log.Write(f"Putting data from {self._src.GetType()} to {self._dst.GetType()}...")
 
-        self._putItems()
-        if self._scope == 'all':
+        if self._scope == 'all' or self._scope == 'items':
+            self._putItems()
+        if self._scope == 'all' or self._scope == 'albums':
             self._putLinks()
 
         return True

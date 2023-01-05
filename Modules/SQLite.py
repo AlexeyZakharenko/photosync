@@ -42,8 +42,8 @@ class DB(object):
 
         cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ITEMS}(
    srcId TEXT PRIMARY KEY,
-   filename TEXT,
-   dstId TEXT,
+   filename TEXT UNIQUE,
+   dstId TEXT UNIQUE,
    sync INTEGER)
     """)
         self._connection.commit()
@@ -51,8 +51,8 @@ class DB(object):
 
         cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ALBUMS}(
    srcId TEXT PRIMARY KEY,
-   title TEXT,
-   dstId TEXT,
+   title TEXT UNIQUE,
+   dstId TEXT UNIQUE,
    sync INTEGER)""")
         self._connection.commit()
         Log.Write(f"Table '{TABLE_ALBUMS}' created")
@@ -79,22 +79,24 @@ class DB(object):
         self._connection.commit()
         Log.Write(f"Table '{TABLE_ALBUMS}' deleted")
 
-    def GetInfo(self):
+    def GetStatus(self):
         self._connect()
         cursor = self._connection.cursor()        
-        cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_ITEMS}")
-        items = cursor.fetchall()
-        cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_ITEMS} WHERE sync = 1")
-        itemsDone = cursor.fetchall()
-        cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_ALBUMS}")
-        albums = cursor.fetchall()
-        cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_ALBUMS} WHERE sync = 1")
-        albumsDone = cursor.fetchall()
-        cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_LINKS}")
-        links = cursor.fetchall()
-        cursor.execute(f"SELECT COUNT(*) AS NRECORDS FROM {TABLE_LINKS} WHERE sync = 1")
-        linksDone = cursor.fetchall()
-        Log.Write(f"Table info: '{TABLE_ITEMS}':{items[0][0]}/{itemsDone[0][0]}, '{TABLE_ALBUMS}':{albums[0][0]}/{albumsDone[0][0]}, '{TABLE_LINKS}':{links[0][0]}/{linksDone[0][0]}")
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ITEMS}")
+        items = cursor.fetchone()
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ITEMS}")
+        items = cursor.fetchone()
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ITEMS} WHERE sync = 1")
+        itemsDone = cursor.fetchone()
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ALBUMS}")
+        albums = cursor.fetchone()
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ALBUMS} WHERE sync = 1")
+        albumsDone = cursor.fetchone()
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_LINKS}")
+        links = cursor.fetchone()
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_LINKS} WHERE sync = 1")
+        linksDone = cursor.fetchone()
+        Log.Write(f"Table info: '{TABLE_ITEMS}':{items[0]}/{itemsDone[0]}, '{TABLE_ALBUMS}':{albums[0]}/{albumsDone[0]}, '{TABLE_LINKS}':{links[0]}/{linksDone[0]}")
 
     def UpdateItemsInfo(self,items):
         self._connect()
@@ -110,6 +112,20 @@ class DB(object):
                 cursor.execute(f"SELECT * FROM {TABLE_ITEMS} WHERE srcId = ?", (item.SrcId,))
                 found = cursor.fetchone()
                 if found is None:
+
+                    # generate unique file name
+                    (name, ext) = path.splitext(item.Filename)
+                    n = 0
+                    checkFilename = True
+                    while checkFilename:
+                        cursor.execute(f"SELECT * FROM {TABLE_ITEMS} WHERE filename == ? COLLATE NOCASE", (item.Filename,))
+                        found = cursor.fetchone()
+                        if not found is None:
+                            n += 1
+                            item.Filename =f"{name}_{n}{ext}"
+                        else:
+                            checkFilename = False
+
                     cursor.execute(f"INSERT INTO {TABLE_ITEMS} (srcId, filename, sync) VALUES (?, ?, ?)", (item.SrcId, item.Filename, 0,))
                     inserted += 1
                 else:
@@ -140,6 +156,20 @@ class DB(object):
                 cursor.execute(f"SELECT * FROM {TABLE_ALBUMS} WHERE srcId == ?", (album.SrcId,))
                 found = cursor.fetchone()
                 if found is None:
+
+                    # generate unique album name
+                    albumTitle = album.Title;
+                    n = 0
+                    checkAlbum = True
+                    while checkAlbum:
+                        cursor.execute(f"SELECT * FROM {TABLE_ALBUMS} WHERE title == ? COLLATE NOCASE", (album.Title,))
+                        found = cursor.fetchone()
+                        if not found is None:
+                            n += 1
+                            album.Title =f"{albumTitle}_{n}"
+                        else:
+                            checkAlbum = False
+
                     cursor.execute(f"INSERT INTO {TABLE_ALBUMS} (srcId, title, sync) VALUES (?, ?, ?)", (album.SrcId, album.Title, 0,))
                     inserted += 1
                 else:
@@ -280,11 +310,13 @@ class DB(object):
 
         return True
 
-    def Clean(self):
+    def Clean(self, scope = 'all'):
         self._connect()
         cursor = self._connection.cursor()
-        cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
-        cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
-        cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
+        if scope == 'all' or scope =='items':
+            cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
+        if scope == 'all' or scope =='albums':
+            cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
+            cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
         self._connection.commit()
         Log.Write(f"All sync flags in tables are cleaned")
