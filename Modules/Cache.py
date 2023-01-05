@@ -4,7 +4,7 @@
 from pathlib import Path
 from shutil import rmtree
 from os import listdir, path, unlink
-from base64 import urlsafe_b64encode
+import hashlib
 
 import Modules.Log as Log
 
@@ -15,17 +15,18 @@ class Cache:
         self._cachedir = path.normpath(cachedir)
         Path(self._cachedir).mkdir(parents=True, exist_ok=True)
 
-
-    def _normaliseName(filename):
-        return urlsafe_b64encode(bytes(filename, 'utf-8')).decode('utf-8')
+    def _normalizeName(filename):
+        m = hashlib.md5()
+        m.update(filename.encode('utf-8'))
+        return m.hexdigest()
         
     def Store(self, filename, content):
-        fullname = path.join(self._cachedir, Cache._normaliseName(filename))
+        fullname = path.join(self._cachedir, Cache._normalizeName(filename))
         with open(fullname, mode='wb') as file:
             file.write(content)
 
     def Get(self, filename):
-        fullname = path.join(self._cachedir, Cache._normaliseName(filename))
+        fullname = path.join(self._cachedir, Cache._normalizeName(filename))
         if path.isfile(fullname):
             with open(fullname, mode='rb') as file:
                 return file.read()
@@ -33,7 +34,7 @@ class Cache:
         raise Exception(f"File '{filename}' not in cache")
 
     def Remove(self, filename):
-        fullname = path.join(self._cachedir, Cache._normaliseName(filename))
+        fullname = path.join(self._cachedir, Cache._normalizeName(filename))
         if path.isfile(fullname):
             unlink(fullname)
 
