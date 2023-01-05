@@ -33,7 +33,7 @@ class Cache:
         raise Exception(f"File '{filename}' not in cache")
 
     def Remove(self, filename):
-        fullname = path.join(self._cachedir, filename)
+        fullname = path.join(self._cachedir, Cache._normaliseName(filename))
         if path.isfile(fullname):
             unlink(fullname)
 

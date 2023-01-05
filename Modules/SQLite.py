@@ -177,12 +177,6 @@ class DB(object):
 
                 for item in album.Items:    
 
-                    # Looking for items table
-                    cursor.execute(f"SELECT * FROM {TABLE_ITEMS} WHERE srcId = ?", (item,))
-                    found = cursor.fetchone()
-                    if found is None:
-                        continue
-
                     cursor.execute(f"SELECT * FROM {TABLE_LINKS} WHERE albumId = ? AND itemId = ?", (album.SrcId, item,))
                     found = cursor.fetchone()
                     if found is None:
@@ -315,8 +309,10 @@ class DB(object):
         cursor = self._connection.cursor()
         if scope == 'all' or scope =='items':
             cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
+            Log.Write(f"Clean sync flags in table {TABLE_ITEMS}")
         if scope == 'all' or scope =='albums':
             cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
+            Log.Write(f"Clean sync flags in table {TABLE_ALBUMS}")
             cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
+            Log.Write(f"Clean sync flags in table {TABLE_LINKS}")
         self._connection.commit()
-        Log.Write(f"All sync flags in tables are cleaned")

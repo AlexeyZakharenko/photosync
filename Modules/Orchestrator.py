@@ -70,8 +70,9 @@ class Orchestrator:
 
         (items, albums) = self._src.GetInfo(self._start, self._end, self._scope)
 
-        self._db.UpdateItemsInfo(items)
-        if self._scope == 'all':
+        if self._scope == 'all' or self._scope == 'items':
+            self._db.UpdateItemsInfo(items)
+        if self._scope == 'all' or self._scope == 'albums':
             self._db.UpdateAlbumsInfo(albums)
 
         return True
@@ -101,9 +102,10 @@ class Orchestrator:
             for link in links:
                 item = self._db.GetItem(link.ItemId)
                 if item is None:
+                    Log.Write(f"WARNING: item '{link.ItemId}' not getted yet. Please get item info from source.")
                     continue
                 if item.DstId is None:
-                    Log.Write(f"ERROR: item '{link.ItemId}' not putted yet")
+                    Log.Write(f"WARNING: item '{link.ItemId}' not putted yet. Please put item to designation.")
                     continue
 
                 album = self._db.GetAlbum(link.AlbumId)

@@ -140,7 +140,7 @@ class Google:
         return result
 
     def _getAlbumsInfo(self):
-        self.Сonnect()
+        self._connect()
         result = []
 
         try:
@@ -239,12 +239,12 @@ class Google:
     def GetInfo(self, start=None, end=None, scope='all'):
 
         if scope == 'all' or scope == 'items':
-            items = self._src._getItemsInfo(start, end)
+            items = self._getItemsInfo(start, end)
         else:
             items = []
 
         if scope == 'all' or scope == 'albums':
-            albums = self._src._getAlbumsInfo()
+            albums = self._getAlbumsInfo()
         else:
             albums = []
 
