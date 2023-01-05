@@ -5,11 +5,10 @@
 #
 # -- common methodes
 # def GetType(self) -> string
-# def GetInfo(self) -> void
+# def GetStatus(self) -> void
 #
 # -- methodes for source
-# def GetItemsInfo(self, start=None, end=None) -> Item[] (SrcId,Filename)
-# def GetAlbumsInfo(self, start=None, end=None) -> Album[] (SrcId, Title)
+# def GetInfo(self, start=None, end=None, scope='all') -> (Item[] ->(SrcId,Filename), Album[] -> (SrcId, Title))
 # def GetItem(self, item, cache) -> bool, set item.Created
 #
 # -- methodes for designation 
@@ -18,18 +17,18 @@
 # def PutItemToAlbum(self, item, album) -> bool
 
 from pathlib import Path
-from os import path, utime, mkdir, link
+from os import path, utime, mkdir, link, listdir
 from datetime import datetime
 
 import Modules.Log as Log
+import Modules.Item as Item
+import Modules.Album as Album
 
 PHOTOS_PATH = 'photos'
 ALBUMS_PATH = 'albums'
 
 class Local:
 
-    def GetType(self):
-        return f"Local ({self._rootdir})"
 
     def __init__(self, rootdir):
         self._rootdir = path.normpath(rootdir)
@@ -40,6 +39,92 @@ class Local:
     def _getSeconds(dt):
         
         return (dt-datetime(1970,1,1)).total_seconds()
+
+    
+    def _getItems(root, subDirs, items, start, end):
+        subDir = ''
+        for s in subDirs:
+            subDir = path.join(subDir, s)
+        startDir = path.join(root, subDir)
+        for entry in listdir(startDir):
+            entryPath = path.join(startDir, entry)
+            if path.isdir(entryPath):
+                Local._getItems(root, subDirs + [entry], items, start, end)
+            else:
+                if start != None or end != None:
+                    time = path.getmtime(entryPath)
+                    if start != None and start > time:
+                        continue;
+                    if end != None and end < time:
+                        continue;
+                items.append(Item.Item(path.join(subDir, entry), entry))
+
+    def _getAlbums(root, subDirs, albumTitle, albums, items):
+        subDir = ''
+        for s in subDirs:
+            subDir = path.join(subDir, s)
+        startDir = path.join(root, subDir)
+        for entry in listdir(startDir):
+            entryPath = path.join(startDir, entry)
+            if path.isdir(entryPath):
+                Local._getAlbums(root, subDirs + [entry], entry, albums, items)
+            else:
+                # Это корень, не альбом
+                if albumTitle is None:
+                    continue;
+                # Ищем документ
+                item = next((i for i in items if i.Filename == entry), None)
+                # Не в этот раз
+                if item is None:
+                    continue;
+
+                # Раньше не добавляли?
+                album = next((a for a in albums if a.SrcId == subDir), None)
+                if album is None:
+                    album = Album.Album(subDir, albumTitle)
+                    albums.append(album)
+                
+                album.Items.append(item.SrcId)
+
+
+    def GetInfo(self, start=None, end=None, scope='all'):
+        items = []
+        albums = []
+        try:
+            startSec = None if start is None else Local._getSeconds(start)
+            endSec = None if end is None else Local._getSeconds(end)
+
+            if scope == 'all' or scope == 'items':
+                Log.Write(f"Getting items info from Local service...")
+                Local._getItems(path.join(self._rootdir,PHOTOS_PATH), [], items, startSec, endSec)
+                Log.Write(f"Got info for {len(items)} items")
+            if scope == 'all' or scope == 'albums' :
+                Log.Write(f"Getting albums info from Local service...")
+                Local._getAlbums(path.join(self._rootdir,ALBUMS_PATH), [], None, albums, items)
+                Log.Write(f"Got info for {len(albums)} albums")
+
+        except Exception as err:
+            Log.Write(f"ERROR Can't get info from Local service: {err}")
+
+        return (items, albums)
+
+    def GetItem(self, item, cache):
+        entryPath = path.join(self._rootdir, PHOTOS_PATH, item.SrcId)
+        try:
+            time = datetime.utcfromtimestamp(path.getmtime(entryPath))
+
+            with open(entryPath, mode='rb') as file:
+                cache.Store(item.SrcId, file.read())
+
+            item.Created = time
+
+        except Exception as err:
+            Log.Write(f"ERROR Can't get item '{item.SrcId}' from Local service: {err}")
+            return False
+
+        return True
+
+
 
     def PutItem(self, item, cache):
         
@@ -52,15 +137,7 @@ class Local:
             if not path.isdir(dstPath):
                 Path(dstPath).mkdir(parents=True, exist_ok=True)
 
-
-            dstId = path.join(dstPath,item.Filename);
-            (name, ext) = path.splitext(dstId)
-            n=0
-            while path.isfile(dstId):
-                n += 1
-                dstId=f"{name}_{n}{ext}"
-
-            item.DstId = dstId
+            item.DstId = path.join(dstPath,item.Filename);
 
             open(item.DstId, 'wb').write(cache.Get(item.SrcId))
             utime(item.DstId, (created, created))
@@ -76,16 +153,8 @@ class Local:
 
     def PutAlbum(self, album):
         
-        #Generate new title
         try:
-            dstId = path.join(self._rootdir,ALBUMS_PATH,album.Title)
-            name = dstId
-            n = 0
-            while path.isdir(dstId):
-                n += 1
-                dstId=f"{name}_{n}"
-
-            album.DstId = dstId
+            album.DstId = path.join(self._rootdir,ALBUMS_PATH,album.Title)
             mkdir(album.DstId)
             Log.Write(f"Put album '{album.Title}' ({album.DstId})")
 
@@ -112,6 +181,9 @@ class Local:
 
         return False
 
-    def GetInfo(self):
+    def GetType(self):
+        return f"Local ({self._rootdir})"
+
+    def GetStatus(self):
         Log.Write(f"Local media directory is {self._rootdir}")
 

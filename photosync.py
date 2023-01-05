@@ -28,13 +28,13 @@ try:
     
     parser.add_argument('command', 
             nargs='?', 
-            choices=['info', 'clean', 'put', 'get', 'sync', 'reset'], 
+            choices=['status', 'clean', 'put', 'get', 'sync', 'reset'], 
             type=str, 
             help="Available commands. Run 'photosync.py reset' at the first time to set environment.")
 
     parser.add_argument('--src', 
             type=str, 
-            choices=['google'], 
+            choices=['google', 'local'], 
             default=Default.Src, 
             help=f"Source. By default '{Default.Src}'.")
 
@@ -46,7 +46,7 @@ try:
 
     parser.add_argument('--scope', 
             type=str, 
-            choices=['all','items'], 
+            choices=['all','items', 'albums'], 
             default=Default.Scope, 
             help=f"Scope of sync. By default '{Default.Scope}'.")
 
@@ -81,11 +81,11 @@ try:
             help=f"Cache directory. By default '{Default.CacheDir}'.")
 
     parser.add_argument('--start', 
-            type=lambda s: datetime.strptime(s, '%Y-%m-%d').date(), 
+            type=lambda s: datetime.strptime(s, '%Y-%m-%d'), 
             help="Date 'YYYY-MM-DD' from which the data will be synchronized. By default None.")
 
     parser.add_argument('--end', 
-            type=lambda s: datetime.strptime(s, '%Y-%m-%d').date(), 
+            type=lambda s: datetime.strptime(s, '%Y-%m-%d'), 
             help="Date 'YYYY-MM-DD' up to which the data will be synchronized. By default None.")
 
     parser.add_argument('--fromdays', 

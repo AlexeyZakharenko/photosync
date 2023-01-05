@@ -33,9 +33,6 @@ SCOPES = ['https://www.googleapis.com/auth/photoslibrary']
 
 class Google:
 
-    def GetType(self):
-        return f"Google ({path.join(self._privatedir, CLIENT_SECRET_FILE)})"
-
     def __init__(self, privatedir):
         self._privatedir = path.normpath(privatedir)
         Path(self._privatedir).mkdir(parents=True, exist_ok=True)
@@ -43,6 +40,10 @@ class Google:
             raise Exception(f"Please set up Google Photos Library API accroding this manual: https://developers.google.com/docs/api/quickstart/python, create OAuth credentails and save JSON as {path.join(self._privatedir, CLIENT_SECRET_FILE)}")
         register(self.__close)
 
+    def __close(self):
+        if hasattr(self,"_service"):
+            self._service.close()
+            Log.Write(f"Disconnect from Google service")
 
     def _connect(self):
         if hasattr(self,"_service"):
@@ -70,18 +71,6 @@ class Google:
         
         except HttpError as err:
             Log.Write(f"Can't connect to Google service: {err}")
-
-    def __close(self):
-        if hasattr(self,"_service"):
-            self._service.close()
-            Log.Write(f"Disconnect from Google service")
-
-    def GetInfo(self):
-        self._connect()
-        items = self.GetItemsInfo(body = {})
-        albums = self.GetAlbumsInfo()
-        Log.Write(f"Google service contains {len(items)} items and {len(albums)} albums")
-
 
     def _getBody(start, end):
 
@@ -120,7 +109,7 @@ class Google:
 
         return body
 
-    def GetItemsInfo(self, start=None, end=None):
+    def _getItemsInfo(self, start=None, end=None):
         self._connect()
         result = []
         Log.Write(f"Getting items info from Google service...")
@@ -150,7 +139,7 @@ class Google:
 
         return result
 
-    def GetAlbumsInfo(self, start=None, end=None):
+    def _getAlbumsInfo(self):
         self.Сonnect()
         result = []
 
@@ -239,6 +228,27 @@ class Google:
             #return dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
         else:
             return datetime.fromisoformat(dateString)
+
+    def GetType(self):
+        return f"Google ({path.join(self._privatedir, CLIENT_SECRET_FILE)})"
+
+    def GetStatus(self):
+        self._connect()
+        Log.Write(self.GetType())
+
+    def GetInfo(self, start=None, end=None, scope='all'):
+
+        if scope == 'all' or scope == 'items':
+            items = self._src._getItemsInfo(start, end)
+        else:
+            items = []
+
+        if scope == 'all' or scope == 'albums':
+            albums = self._src._getAlbumsInfo()
+        else:
+            albums = []
+
+        return (items, albums)
 
     def GetItem(self, item, cache):
         self._connect()
