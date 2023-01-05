@@ -90,8 +90,8 @@ class Orchestrator:
         return self._invokeGet() and self._invokePut()
 
     def _putItems(self):
-        Log.Write(f"Putting items from {self._src.GetType()} to {self._dst.GetType()}...")
         items = self._db.GetItemsForSync()
+        Log.Write(f"Putting items from {self._src.GetType()} to {self._dst.GetType()}...")
         if len(items) > 0:
             n = 0 
             for item in items:
@@ -102,9 +102,8 @@ class Orchestrator:
             Log.Write(f"Put {n} of {len(items)} items from {self._src.GetType()} to {self._dst.GetType()}, {len(items)-n} items skipped")
 
     def _putLinks(self):
-
-        Log.Write(f"Putting albums from {self._src.GetType()} to {self._dst.GetType()}...")
         links = self._db.GetLinksForSync()
+        Log.Write(f"Putting albums from {self._src.GetType()} to {self._dst.GetType()}...")
         if len(links) > 0:
             n = 0 
             nAlbums = 0
