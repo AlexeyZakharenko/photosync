@@ -140,11 +140,12 @@ class Local:
             utime(item.DstId, (created, created))
             Log.Write(f"Put item '{item.Filename}' ({item.DstId})")
 
-            cache.Remove(item.SrcId)
-
         except Exception as err:
             Log.Write(f"ERROR Can't put item '{item.Filename}' to Local: {err}")
             return False
+
+        finally:
+            cache.Remove(item.SrcId)
 
         return True
 

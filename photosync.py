@@ -32,7 +32,7 @@ try:
             type=str, 
             help="Available commands. Run 'photosync.py reset' at the first time to set environment.")
 
-    parser.add_argument('--src', 
+    parser.add_argument('--src',
             type=str, 
             choices=['google', 'local', 'native'], 
             default=Default.Src, 
@@ -40,7 +40,7 @@ try:
 
     parser.add_argument('--dst', 
             type=str, 
-            choices=['local'], 
+            choices=['google', 'local'], 
             default=Default.Dst, 
             help=f"Destignation. By default '{Default.Dst}'.")
 

@@ -11,12 +11,13 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
 
 from pathlib import Path
 from os import path
 from datetime import datetime, timezone
 
-from requests import get
+from requests import get, post
 
 from atexit import register
 
@@ -67,6 +68,8 @@ class Google:
                     token.write(creds.to_json())
 
             self._service = build(API_NAME, API_VERSION,  credentials=creds, static_discovery=False)
+            self._token = creds.token
+
             Log.Write(f"Connected to Google Service via API {API_NAME} {API_VERSION}")
         
         except HttpError as err:
@@ -280,3 +283,112 @@ class Google:
 
         return True
 
+    def _uploadMedia(self, name, content):
+
+        upload_url = "https://photoslibrary.googleapis.com/v1/uploads"
+        size = len(content)
+
+        startHeaders = {"Authorization": "Bearer " + self._token,
+                "Content-Length": "0",
+                "X-Goog-Upload-Command": "start",
+                "X-Goog-Upload-Content-Type": "application/octet-stream",
+                "X-Goog-Upload-Protocol": "resumable",
+                "X-Goog-Upload-Raw-Size": f"{size}",
+                "X-Goog-Upload-File-Name": name}
+
+        response = post(upload_url, headers=startHeaders)
+        if response.status_code != 200:
+            raise Exception(f"Bad start upload status {response.status_code}")
+
+        url = response.headers['X-Goog-Upload-URL']
+
+        uploadHeaders = {"Authorization": "Bearer " + self._token,
+                "Content-Length": f"{size}",
+                "X-Goog-Upload-Command": "upload, finalize",
+                "X-Goog-Upload-Offset": "0"}
+
+        response = post(url, data=content, headers=uploadHeaders)
+        if response.status_code != 200:
+            raise Exception(f"Bad upload status {response.status_code}")
+
+        return response.content.decode("utf-8")
+
+    def PutItem(self, item, cache):
+        self._connect()
+        try:
+
+            token = self._uploadMedia(item.Filename, cache.Get(item.SrcId))
+            
+            response = self._service.mediaItems().batchCreate(body={
+                "newMediaItems": [
+                    {
+                        "simpleMediaItem": {
+                            "fileName": item.Filename,
+                            "uploadToken": token
+                        }
+                    }
+                ]}).execute()
+
+
+            if not response['newMediaItemResults'][0]['status']['message'] in ['Success', 'OK'] :
+                raise Exception(f"Invalid response {response['newMediaItemResults'][0]['status']['message']}")
+
+            item.DstId = response['newMediaItemResults'][0]['mediaItem']['id']
+
+            Log.Write(f"Put item '{item.Filename}' ({item.DstId})")
+
+
+        except HttpError as err:
+            Log.Write(f"ERROR Can't put item '{item.Filename}' to Google: {err}")
+            if err.status_code == 429:
+                raise Exception("Quota exceeded for Google service")
+            return False
+
+        except Exception as err:
+            Log.Write(f"ERROR Can't put item '{item.Filename}' to Google: {err}")
+            return False
+
+        finally:
+            cache.Remove(item.SrcId)
+
+        return True
+    
+    def PutAlbum(self, album):
+        self._connect()
+        try:
+
+            response = self._service.albums().create(body={"album": {"title": album.Title}}).execute()
+            album.DstId = response['id']
+            Log.Write(f"Put album '{album.Title}' ({album.DstId})")
+
+        except HttpError as err:
+            Log.Write(f"ERROR Can't put album '{album.Title}' to Google: {err}")
+            if err.status_code == 429:
+                raise Exception("Quota exceeded for Google service")
+            return False
+
+        except Exception as err:
+            Log.Write(f"ERROR Can't put album '{album.Title}' to Google: {err}")
+            return False
+
+
+        return True
+
+    def PutItemToAlbum(self, item, album):
+        self._connect()
+        try:
+            self._service.albums().batchAddMediaItems(albumId=album.DstId, body={"mediaItemIds": [item.DstId]}).execute()
+            Log.Write(f"Put item '{item.Filename}' into album '{album.Title}' ({item.DstId} -> {album.DstId})")
+
+        except HttpError as err:
+            Log.Write(f"ERROR Can't put item '{item.Filename}' into album '{album.Title}' to Google: {err}")
+            if err.status_code == 429:
+                raise Exception("Quota exceeded for Google service")
+            return False
+
+        except Exception as err:
+            Log.Write(f"ERROR Can't put item '{item.Filename}' into album '{album.Title}' to Google: {err}")
+            return False
+
+
+        return True

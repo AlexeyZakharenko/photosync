@@ -8,7 +8,6 @@ import hashlib
 
 import Modules.Log as Log
 
-
 class Cache:
 
     def __init__(self, cachedir):
@@ -20,6 +19,7 @@ class Cache:
         m.update(filename.encode('utf-8'))
         return m.hexdigest()
         
+
     def Store(self, filename, content):
         fullname = path.join(self._cachedir, Cache._normalizeName(filename))
         with open(fullname, mode='wb') as file:
@@ -32,6 +32,9 @@ class Cache:
                 return file.read()
 
         raise Exception(f"File '{filename}' not in cache")
+
+    def GetFilename(self, filename):
+        return path.join(self._cachedir, Cache._normalizeName(filename))
 
     def Remove(self, filename):
         fullname = path.join(self._cachedir, Cache._normalizeName(filename))
