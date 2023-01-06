@@ -99,7 +99,7 @@ try:
         db = SQLite.DB(parameters.dbfile),
         src = Orchestrator.GetSource(parameters.src, parameters.srcpvt, parameters.srcroot),
         dst = Orchestrator.GetSource(parameters.dst, parameters.dstpvt, parameters.dstroot),
-        start = (datetime.today()-timedelta(days=parameters.fromdays)).date() if parameters.fromdays != None else parameters.start,
+        start = (datetime.today()-timedelta(days=parameters.fromdays)) if parameters.fromdays != None else parameters.start,
         end = parameters.end,
         scope = parameters.scope
     )
