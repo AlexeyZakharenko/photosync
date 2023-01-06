@@ -128,6 +128,12 @@ class Orchestrator:
                 if self._dst.PutItemToAlbum(item, album):
                     self._db.MarkLinkSync(link)
                     n += 1
+                else:
+                    if item.DstId is None:
+                        self._db.MarkItemSync(item, 0)
+                    if album.DstId is None:
+                        self._db.MarkAlbumSync(album, 0)
+
 
 
             Log.Write(f"Put {n} of {len(links)} links and {nAlbums} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(links)-n} links skipped")

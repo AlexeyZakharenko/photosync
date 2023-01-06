@@ -165,7 +165,17 @@ class Local:
     def PutItemToAlbum(self, item, album):
 
         try:
+            if not path.exists(item.DstId):
+                nonExists = item.DstId
+                item.DstId = None
+                raise Exception(f"Item '{nonExists}' not found")
+            if not path.exists(album.DstId):
+                nonExists = album.DstId
+                item.DstId = None
+                raise Exception(f"Album '{nonExists}' not found")
+                
             targetPath = path.join(album.DstId,path.split(item.DstId)[-1])
+
             link(item.DstId, targetPath)
             Log.Write(f"Put item '{item.DstId}' into album '{album.DstId}' ({targetPath})")
 
