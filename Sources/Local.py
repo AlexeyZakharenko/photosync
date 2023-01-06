@@ -130,7 +130,7 @@ class Local:
 
             created = Local._getSeconds(item.Created)
             
-            dstPath = path.join(self._rootdir,PHOTOS_PATH,item.Created.strftime("%Y-%m"))
+            dstPath = path.join(self._rootdir,PHOTOS_PATH,item.Created.strftime("%Y"),item.Created.strftime("%m"))
             if not path.isdir(dstPath):
                 Path(dstPath).mkdir(parents=True, exist_ok=True)
 
