@@ -49,23 +49,23 @@ class Orchestrator:
         del self._dst
 
     def _invokeReset(self):
-        if input(f"Are You sure to reset ALL data? (Yes/No) ") != 'Yes':
+        if input(f"Are You sure to reset ALL data at '{self._db.GetDBFile()}'? (Yes/No) ") != 'Yes':
             return True
         Log.Write("Resetting local environment...")
         self._db.DeleteDB()
         self._db.CreateDB()
         self._cache.Clean()
         Log.Write("Done! Don't forget to erase destination data.")
-        return True;
+        return True
 
     def _invokeClean(self):
-        if input(f"Are You sure to clean {self._scope} data? (Yes/No) ") != 'Yes':
+        if input(f"Are You sure to clean {self._scope} data at '{self._db.GetDBFile()}'? (Yes/No) ") != 'Yes':
             return True
         Log.Write("Clean sync results...")
         self._db.Clean(self._scope)
         self._cache.Clean()
         Log.Write("Done! Don't forget to erase destination data.")
-        return True;
+        return True
 
     def _invokeStatus(self):
         Log.Write(f"Source: {self._src.GetType()}, destination: {self._dst.GetType()}")

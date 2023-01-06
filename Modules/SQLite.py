@@ -26,6 +26,10 @@ class DB(object):
         self._filename = path.normpath(dbfile)
         register(self.__close)
 
+    def GetDBFile(self):
+        return self._filename
+
+
     def _connect(self):
         if not hasattr(self,"_connection"):
             self._connection = sqlite3.connect(self._filename)
