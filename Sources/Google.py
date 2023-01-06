@@ -142,12 +142,12 @@ class Google:
 
         return result
 
-    def _getAlbumsInfo(self):
+    def _getAlbumsInfo(self,items):
         self._connect()
         result = []
 
         try:
-            n=0;
+            n=0
             Log.Write(f"Getting private albums info from Google...")
             nextPageToken = None
             while nextPageToken != '':
@@ -174,6 +174,7 @@ class Google:
                         albumItems = albumRequest.get('mediaItems', [])
                         nextAlbumToken = albumRequest.get('nextPageToken', '')
                         for ai in albumItems:
+
                             album.Items.append(ai['id'])        
                     result.append(album)   
                     n += 1 
@@ -207,6 +208,8 @@ class Google:
                         albumItems = albumRequest.get('mediaItems', [])
                         nextAlbumToken = albumRequest.get('nextPageToken', '')
                         for ai in albumItems:
+                            if next((i for i in items if i.SrcId == ai['id']), None) is None:
+                                items.append(Item.Item(ai['id'], ai['filename']))
                             album.Items.append(ai['id'])        
                     result.append(album)    
                     n += 1
@@ -241,16 +244,17 @@ class Google:
 
     def GetInfo(self, start=None, end=None, scope='all'):
 
+        items = []
         if scope == 'all' or scope == 'items':
             items = self._getItemsInfo(start, end)
-        else:
-            items = []
+            
 
         if scope == 'all' or scope == 'albums':
-            albums = self._getAlbumsInfo()
+            albums = self._getAlbumsInfo(items)
         else:
             albums = []
 
+        
         return (items, albums)
 
     def GetItem(self, item, cache):

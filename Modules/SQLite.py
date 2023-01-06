@@ -248,7 +248,7 @@ class DB(object):
             return Album.Album(albumId, record[0], record[1] if record[2] == 1 else None)        
         
         except Exception as err:
-            Log.Write(f"ERROR Can't get album '{albumId}': {err}")
+            Log.Write(f"ERROR Can't get album '{albumId}' from table: {err}")
         
         return None 
 
@@ -264,15 +264,15 @@ class DB(object):
             return Item.Item(itemId, record[0], record[1] if record[2] == 1 else None)        
         
         except Exception as err:
-            Log.Write(f"ERROR Can't get item '{itemId}': {err}")
+            Log.Write(f"ERROR Can't get item '{itemId}' from table: {err}")
         
         return None 
 
-    def MarkItemSync(self, item):
+    def MarkItemSync(self, item, sync=1):
         self._connect()
         cursor = self._connection.cursor()
         try:
-            cursor.execute(f"UPDATE {TABLE_ITEMS} SET dstId = ?, sync = ? WHERE srcId = ?", (item.DstId, 1, item.SrcId, ))
+            cursor.execute(f"UPDATE {TABLE_ITEMS} SET dstId = ?, sync = ? WHERE srcId = ?", (item.DstId, sync, item.SrcId, ))
             self._connection.commit()
         except Exception as err:
             self._connection.rollback()
@@ -282,11 +282,11 @@ class DB(object):
         return True
 
 
-    def MarkAlbumSync(self, album):
+    def MarkAlbumSync(self, album, sync=1):
         self._connect()
         cursor = self._connection.cursor()
         try:
-            cursor.execute(f"UPDATE {TABLE_ALBUMS} SET dstId = ?, sync = ? WHERE srcId = ?", (album.DstId, 1, album.SrcId, ))
+            cursor.execute(f"UPDATE {TABLE_ALBUMS} SET dstId = ?, sync = ? WHERE srcId = ?", (album.DstId, sync, album.SrcId, ))
             self._connection.commit()
         except Exception as err:
             self._connection.rollback()
@@ -295,11 +295,11 @@ class DB(object):
         return True
         
 
-    def MarkLinkSync(self, link):
+    def MarkLinkSync(self, link, sync=1):
         self._connect()
         cursor = self._connection.cursor()
         try:
-            cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ? WHERE albumId = ? AND itemId = ?", (1, link.AlbumId, link.ItemId, ))
+            cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ? WHERE albumId = ? AND itemId = ?", (sync, link.AlbumId, link.ItemId, ))
             self._connection.commit()
         except Exception as err:
             self._connection.rollback()
