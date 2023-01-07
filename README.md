@@ -7,7 +7,7 @@
 
 ### Google
 
-Для работы необходимы библиотеки клиента Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project). Да, проект надо опубликовать, иначе токкен авторизации не будет перевыпускаться.
+Для работы необходимы библиотеки клиента Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project). Да, проект надо опубликовать, иначе токен авторизации не будет перевыпускаться.
 
 По умолчанию ищет JSON-файл клиента Google в _private/google-client_secret.json_.
 
