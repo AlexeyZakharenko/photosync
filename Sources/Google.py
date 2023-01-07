@@ -142,55 +142,22 @@ class Google:
 
         return result
 
-    def _getAlbumsInfo(self,items):
-        self._connect()
-        result = []
+    def _getAlbumsInfoByType(self, type, albums, items, start=None, end=None):
 
-        try:
+
             n=0
-            Log.Write(f"Getting private albums info from Google...")
+            Log.Write(f"Getting {type} albums info from Google...")
             nextPageToken = None
             while nextPageToken != '':
                 nextPageToken = '' if nextPageToken == None else nextPageToken
-                request = self._service.albums().list(pageSize = 50, pageToken = nextPageToken).execute()
-                albums = request.get('albums', [])
-                nextPageToken = request.get('nextPageToken', '')
 
-                for a in albums:
-                    album = Album.Album(a['id'], a['title'])
-
-                    # Ask for photos in album
-                    nextAlbumToken = None
-                    while nextAlbumToken != '':
-
-                        nextAlbumToken = '' if nextAlbumToken == None else nextAlbumToken
-                        albumRequest = self._service.mediaItems().search(body = {
-                            "albumId": album.SrcId,
-                            "pageSize": 100,
-                            "pageToken": nextAlbumToken
-                        }).execute()
-
-
-                        albumItems = albumRequest.get('mediaItems', [])
-                        nextAlbumToken = albumRequest.get('nextPageToken', '')
-                        for ai in albumItems:
-
-                            album.Items.append(ai['id'])        
-                    result.append(album)   
-                    n += 1 
-                    if n % 10 == 0:
-                        Log.Write(f"Got info for {n} private albums")
-
-            if n % 10 != 0:
-                Log.Write(f"Got info for {n} private albums")
-
-            n=0
-            Log.Write(f"Getting shared albums info from Google...")
-            nextPageToken = None
-            while nextPageToken != '':
-                nextPageToken = '' if nextPageToken == None else nextPageToken
-                request = self._service.sharedAlbums().list(pageSize = 50, pageToken = nextPageToken).execute()
-                albums = request.get('sharedAlbums', [])
+                if type == 'shared':
+                    request = self._service.sharedAlbums().list(pageSize = 50, pageToken = nextPageToken).execute()
+                    albums = request.get('sharedAlbums', [])
+                else:
+                    request = self._service.albums().list(pageSize = 50, pageToken = nextPageToken).execute()
+                    albums = request.get('albums', [])
+                
                 nextPageToken = request.get('nextPageToken', '')
 
                 for a in albums:
@@ -205,28 +172,45 @@ class Google:
                             "pageSize": 100,
                             "pageToken": nextAlbumToken
                         }).execute()
+
                         albumItems = albumRequest.get('mediaItems', [])
                         nextAlbumToken = albumRequest.get('nextPageToken', '')
                         for ai in albumItems:
+                            if start != None and Google._getDateTime(ai['mediaMetadata']['creationTime']).date() < start.date():
+                                continue;
+                            if end != None and Google._getDateTime(ai['mediaMetadata']['creationTime']).date() > end.date():
+                                continue;
                             if next((i for i in items if i.SrcId == ai['id']), None) is None:
                                 items.append(Item.Item(ai['id'], ai['filename']))
-                            album.Items.append(ai['id'])        
-                    result.append(album)    
-                    n += 1
-                    if n % 10 == 0:
-                        Log.Write(f"Got info for {n} shared albums")
-            if n % 10 != 0:
-                Log.Write(f"Got info for {n} shared albums")
 
-            Log.Write(f"Successfully got info for {len(result)} albums")
+                            album.Items.append(ai['id'])        
+
+                    if len(album.Items) > 0:        
+                        albums.append(album)    
+                    n += 1 
+                    if n % 10 == 0:
+                        Log.Write(f"Scan info for {n} {type} albums")
+
+            if n % 10 != 0:
+                Log.Write(f"Scan info for {n} {type} albums")
+
+    def _getAlbumsInfo(self, items, start=None, end=None):
+        self._connect()
+        albums = []
+
+        try:
+
+            self._getAlbumsInfoByType('private', albums, items, start, end)
+            self._getAlbumsInfoByType('shared', albums, items, start, end)
+
+            Log.Write(f"Successfully got info for {len(albums)} albums")
 
         except HttpError as err:
             Log.Write(f"ERROR Can't get album info from Google: {err}")
             if err.status_code == 429:
                 raise Exception("Quota exceeded for Google service")
 
-
-        return result
+        return albums
 
     def _getDateTime(dateString):
         if dateString[-1:] == 'Z':
@@ -250,7 +234,7 @@ class Google:
             
 
         if scope == 'all' or scope == 'albums':
-            albums = self._getAlbumsInfo(items)
+            albums = self._getAlbumsInfo(items, start, end)
         else:
             albums = []
 
