@@ -29,76 +29,92 @@ class DB(object):
     def GetDBFile(self):
         return self._filename
 
+    def __close(self):
+        if hasattr(self,"_connection"):
+            self._connection.close()
+            Log.Write(f"Disconnect from SQLite DB '{self._filename}'")
 
     def _connect(self):
         if not hasattr(self,"_connection"):
             self._connection = sqlite3.connect(self._filename)
             Log.Write(f"Connect to SQLite DB '{self._filename}'")
 
-    def __close(self):
-        if hasattr(self,"_connection"):
-            self._connection.close()
-            Log.Write(f"Disconnect from SQLite DB '{self._filename}'")
+        self._checkItemsTable()
+        self._checkAlbumsTable()
+        self._checkLinksTable()
+
+    def _checkItemsTable(self):
+        cursor = self._connection.cursor()        
+        cursor.execute(f"SELECT count(*) FROM sqlite_master WHERE type='table' AND name='{TABLE_ITEMS}'")        
+        record = cursor.fetchone()
+        if record[0] == 0:
+            cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ITEMS}(
+srcId TEXT PRIMARY KEY,
+filename TEXT UNIQUE,
+dstId TEXT UNIQUE,
+sync INTEGER)
+""")
+            self._connection.commit()
+            Log.Write(f"Table '{TABLE_ITEMS}' created")
+
+    def _checkAlbumsTable(self):
+        cursor = self._connection.cursor()        
+        cursor.execute(f"SELECT count(*) FROM sqlite_master WHERE type='table' AND name='{TABLE_ALBUMS}'")        
+        record = cursor.fetchone()
+        if record[0] == 0:
+            self._connection.commit()
+            cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ALBUMS}(
+srcId TEXT PRIMARY KEY,
+title TEXT UNIQUE,
+dstId TEXT UNIQUE,
+sync INTEGER)""")
+            self._connection.commit()
+            Log.Write(f"Table '{TABLE_ALBUMS}' created")
+
+    def _checkLinksTable(self):
+        cursor = self._connection.cursor()        
+        cursor.execute(f"SELECT count(*) FROM sqlite_master WHERE type='table' AND name='{TABLE_LINKS}'")        
+        record = cursor.fetchone()
+        if record[0] == 0:
+            cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_LINKS}(
+albumId TEXT NOT NULL,
+itemId TEXT NOT NULL,
+sync INTEGER NOT NULL)
+""")
+            self._connection.commit()
+            Log.Write(f"Table '{TABLE_LINKS}' created")
 
     def CreateDB(self):
         self._connect()
-        cursor = self._connection.cursor()        
-
-        cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ITEMS}(
-   srcId TEXT PRIMARY KEY,
-   filename TEXT UNIQUE,
-   dstId TEXT UNIQUE,
-   sync INTEGER)
-    """)
-        self._connection.commit()
-        Log.Write(f"Table '{TABLE_ITEMS}' created")
-
-        cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ALBUMS}(
-   srcId TEXT PRIMARY KEY,
-   title TEXT UNIQUE,
-   dstId TEXT UNIQUE,
-   sync INTEGER)""")
-        self._connection.commit()
-        Log.Write(f"Table '{TABLE_ALBUMS}' created")
-
-        cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_LINKS}(
-   albumId TEXT NOT NULL,
-   itemId TEXT NOT NULL,
-   sync INTEGER NOT NULL)
-    """)
-        self._connection.commit()
-        Log.Write(f"Table '{TABLE_LINKS}' created")
+        self._checkItemsTable()
+        self._checkAlbumsTable()
+        self._checkLinksTable()
 
     def DeleteDB(self):
         self._connect()
-        cursor = self._connection.cursor()        
-        cursor.execute(f"DROP TABLE IF EXISTS {TABLE_LINKS}")
-        self._connection.commit()
-        Log.Write(f"Table '{TABLE_LINKS}' deleted")
-        cursor.execute(f"DROP TABLE IF EXISTS {TABLE_ITEMS}")
-        self._connection.commit()
-        Log.Write(f"Table '{TABLE_ITEMS}' deleted")
-        cursor = self._connection.cursor()        
-        cursor.execute(f"DROP TABLE IF EXISTS {TABLE_ALBUMS}")
-        self._connection.commit()
-        Log.Write(f"Table '{TABLE_ALBUMS}' deleted")
+        cursor = self._connection.cursor()   
+        for table in [TABLE_LINKS, TABLE_ALBUMS, TABLE_ITEMS]:     
+            cursor.execute(f"DROP TABLE IF EXISTS {table}")
+            self._connection.commit()
+            Log.Write(f"Table '{table}' deleted")
 
     def GetStatus(self):
         self._connect()
-        cursor = self._connection.cursor()        
+        cursor = self._connection.cursor()  
+
         cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ITEMS}")
         items = cursor.fetchone()
         cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ITEMS}")
         items = cursor.fetchone()
-        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ITEMS} WHERE sync = 1")
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ITEMS} WHERE sync != 0")
         itemsDone = cursor.fetchone()
         cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ALBUMS}")
         albums = cursor.fetchone()
-        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ALBUMS} WHERE sync = 1")
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_ALBUMS} WHERE sync != 0")
         albumsDone = cursor.fetchone()
         cursor.execute(f"SELECT COUNT(*) FROM {TABLE_LINKS}")
         links = cursor.fetchone()
-        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_LINKS} WHERE sync = 1")
+        cursor.execute(f"SELECT COUNT(*) FROM {TABLE_LINKS} WHERE sync != 0")
         linksDone = cursor.fetchone()
         Log.Write(f"Table info: '{TABLE_ITEMS}':{items[0]}/{itemsDone[0]}, '{TABLE_ALBUMS}':{albums[0]}/{albumsDone[0]}, '{TABLE_LINKS}':{links[0]}/{linksDone[0]}")
 
@@ -245,7 +261,7 @@ class DB(object):
             if record is None:
                 raise Exception(f"Not found")
 
-            return Album.Album(albumId, record[0], record[1] if record[2] == 1 else None)        
+            return Album.Album(albumId, record[0], record[1] if record[2] != 0 else None)        
         
         except Exception as err:
             Log.Write(f"ERROR Can't get album '{albumId}' from table: {err}")
@@ -261,7 +277,7 @@ class DB(object):
             if record is None:
                 raise Exception(f"Not found")
 
-            return Item.Item(itemId, record[0], record[1] if record[2] == 1 else None)        
+            return Item.Item(itemId, record[0], record[1] if record[2] != 0 else None)        
         
         except Exception as err:
             Log.Write(f"ERROR Can't get item '{itemId}' from table: {err}")
