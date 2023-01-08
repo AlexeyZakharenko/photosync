@@ -151,14 +151,14 @@ class Google:
 
                 if type == 'shared':
                     request = self._service.sharedAlbums().list(pageSize = 50, pageToken = nextPageToken).execute()
-                    albums = request.get('sharedAlbums', [])
+                    albumRecords = request.get('sharedAlbums', [])
                 else:
                     request = self._service.albums().list(pageSize = 50, pageToken = nextPageToken).execute()
-                    albums = request.get('albums', [])
+                    albumRecords = request.get('albums', [])
                 
                 nextPageToken = request.get('nextPageToken', '')
 
-                for a in albums:
+                for a in albumRecords:
                     album = Album.Album(a['id'], a['title'])
 
                     # Ask for photos in album
@@ -279,8 +279,7 @@ class Google:
                 "X-Goog-Upload-Command": "start",
                 "X-Goog-Upload-Content-Type": "application/octet-stream",
                 "X-Goog-Upload-Protocol": "resumable",
-                "X-Goog-Upload-Raw-Size": f"{size}",
-                "X-Goog-Upload-File-Name": name}
+                "X-Goog-Upload-Raw-Size": f"{size}"}
 
         response = post(upload_url, headers=startHeaders)
         if response.status_code != 200:

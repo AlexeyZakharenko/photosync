@@ -30,7 +30,7 @@ try:
             nargs='?', 
             choices=['status', 'clean', 'put', 'get', 'sync', 'reset'], 
             type=str, 
-            help="Available commands. Run 'photosync.py reset' at the first time to set environment.")
+            help="Available commands.")
 
     parser.add_argument('--src',
             type=str, 

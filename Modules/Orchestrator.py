@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-import Sources.Google as Google
-import Sources.Local as Local
-import Sources.Native as Native
+import Storages.Google as Google
+import Storages.Local as Local
+import Storages.Native as Native
 import Modules.Log as Log
 
 def GetSource(type, privateDir, rootDir):
