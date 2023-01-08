@@ -30,7 +30,7 @@ try:
             nargs='?', 
             choices=['status', 'clean', 'put', 'get', 'sync', 'reset'], 
             type=str, 
-            help="Available commands. See ")
+            help="Available commands.")
 
     parser.add_argument('--src',
             type=str, 
