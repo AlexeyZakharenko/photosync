@@ -143,8 +143,6 @@ class Google:
         return result
 
     def _getAlbumsInfoByType(self, type, albums, items, start=None, end=None):
-
-
             n=0
             Log.Write(f"Getting {type} albums info from Google...")
             nextPageToken = None
