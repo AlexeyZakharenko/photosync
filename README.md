@@ -29,7 +29,7 @@
 
 0) Убедиться, что установлены python >= 3.8 и pip 
 1) Скачать проект
-2) Поставить библиотеки Google API: `pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib`
+2) Поставить библиотеки Google API: `pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib`
 3) Настроить проект c Photos Library API, создать для него OAuth 2.0 Client Сredentials (scope: https://www.googleapis.com/auth/photoslibrary) и сохранить его json в подпапку _/private_ проекта: _private/google-client_secret.json_
 4) Изучить `photosync.py -h`
 5) Попробовать запустить `photosync.py sync`, при необходимости указав параметры
