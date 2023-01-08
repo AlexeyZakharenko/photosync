@@ -11,11 +11,10 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaFileUpload
 
 from pathlib import Path
 from os import path
-from datetime import datetime, timezone
+from datetime import datetime
 
 from requests import get, post
 
@@ -75,10 +74,11 @@ class Google:
         except HttpError as err:
             Log.Write(f"Can't connect to Google: {err}")
 
-    def _getBody(start, end):
+    @staticmethod
+    def _getBody(start, end): 
 
         body = {
-                "pageSize": 100,
+                "pageSize": "100",
         }
         
         # Add dates if required
@@ -89,20 +89,20 @@ class Google:
                 end = datetime.max.date()
 
             body = {
-                "pageSize": 100,
+                "pageSize": "100",
                 "filters": {
                     "dateFilter": {
                         "ranges": [
                             {
                                 "startDate": {
-                                    "year": start.year,
-                                    "month": start.month,
-                                    "day": start.day
+                                    "year": f"{start.year}",
+                                    "month": f"{start.month}",
+                                    "day": f"{start.day}"
                                 },
                                 "endDate": {
-                                    "year": end.year,
-                                    "month": end.month,
-                                    "day": end.day
+                                    "year": f"{end.year}",
+                                    "month": f"{end.month}",
+                                    "day": f"{end.day}"
                                 }
                             }
                         ]
@@ -210,6 +210,7 @@ class Google:
 
         return albums
 
+    @staticmethod
     def _getDateTime(dateString):
         if dateString[-1:] == 'Z':
             return datetime.fromisoformat(dateString[:-1])
@@ -269,7 +270,7 @@ class Google:
 
         return True
 
-    def _uploadMedia(self, name, content):
+    def _uploadMedia(self, content):
 
         upload_url = "https://photoslibrary.googleapis.com/v1/uploads"
         size = len(content)
@@ -302,7 +303,7 @@ class Google:
         self._connect()
         try:
 
-            token = self._uploadMedia(item.Filename, cache.Get(item.SrcId))
+            token = self._uploadMedia(cache.Get(item.SrcId))
             
             response = self._service.mediaItems().batchCreate(body={
                 "newMediaItems": [

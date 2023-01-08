@@ -134,8 +134,6 @@ class Orchestrator:
                     if album.DstId is None:
                         self._db.MarkAlbumSync(album, 0)
 
-
-
             Log.Write(f"Put {n} of {len(links)} links and {nAlbums} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(links)-n} links skipped")
 
     def _invokePut(self):
@@ -148,7 +146,6 @@ class Orchestrator:
             self._putLinks()
 
         return True
-
 
 
 

@@ -35,9 +35,11 @@ class Local:
         Path(path.join(self._rootdir,PHOTOS_PATH)).mkdir(parents=True, exist_ok=True)
         Path(path.join(self._rootdir,ALBUMS_PATH)).mkdir(parents=True, exist_ok=True)
 
+    @staticmethod
     def _getSeconds(dt):
         return (dt-datetime(1970,1,1)).total_seconds()
     
+    @staticmethod
     def _getItems(root, subDirs, items, start, end):
         subDir = ''
         for s in subDirs:
@@ -56,6 +58,7 @@ class Local:
                         continue;
                 items.append(Item.Item(path.join(subDir, entry), entry))
 
+    @staticmethod
     def _getAlbums(root, subDirs, albumTitle, albums, items):
         subDir = ''
         for s in subDirs:

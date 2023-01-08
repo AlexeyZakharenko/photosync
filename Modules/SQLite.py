@@ -227,7 +227,6 @@ sync INTEGER NOT NULL)
 
             Log.Write(f"Got {len(result)} items to sync")
         
-        
         except Exception as err:
             Log.Write(f"ERROR Can't get records: {err}")
         
@@ -245,7 +244,6 @@ sync INTEGER NOT NULL)
                     result.append(Link.Link(record[0],record[1]))
 
             Log.Write(f"Got {len(result)} links to sync")
-        
         
         except Exception as err:
             Log.Write(f"ERROR Can't get records: {err}")
@@ -297,7 +295,6 @@ sync INTEGER NOT NULL)
 
         return True
 
-
     def MarkAlbumSync(self, album, sync=1):
         self._connect()
         cursor = self._connection.cursor()
@@ -309,7 +306,6 @@ sync INTEGER NOT NULL)
             Log.Write(f"ERROR Can't mark album {album.SrcId} as sync: {err}")
             return False
         return True
-        
 
     def MarkLinkSync(self, link, sync=1):
         self._connect()

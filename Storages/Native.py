@@ -22,6 +22,7 @@ class Native:
     def GetStatus(self):
         Log.Write(f"Native root directory is {self._rootdir}")
 
+    @staticmethod
     def _getInfo(root, subDirs, albumTitle, albums, items):
         subDir = ''
         for s in subDirs:
@@ -49,7 +50,6 @@ class Native:
                     albums.append(album)
                 
                 album.Items.append(item.SrcId)
-
 
     def GetInfo(self, start=None, end=None, scope='all'):
         items = []
