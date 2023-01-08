@@ -9,7 +9,7 @@
 #
 # -- methodes for source
 # def GetInfo(self, start=None, end=None, scope='all') -> (Item[] ->(SrcId,Filename), Album[] -> (SrcId, Title))
-# def GetItem(self, item, cache) -> bool, set item.Created
+# def GetItem(self, item, cache) -> bool, set item.Created->datetime(UTC), item.Type->['image', 'video']
 #
 # -- methodes for destination
 # def PutItem(self, item, cache) -> bool, set item.DstId, 
@@ -38,7 +38,7 @@ class Local:
     @staticmethod
     def _getSeconds(dt):
         return (dt-datetime(1970,1,1)).total_seconds()
-    
+
     @staticmethod
     def _getItems(root, subDirs, items, start, end):
         subDir = ''
@@ -50,6 +50,8 @@ class Local:
             if path.isdir(entryPath):
                 Local._getItems(root, subDirs + [entry], items, start, end)
             else:
+                if LocalTools.GetTypeByName(entry) is None:
+                    continue
                 if start != None or end != None:
                     time = path.getmtime(entryPath)
                     if start != None and start > time:
@@ -117,6 +119,8 @@ class Local:
                 cache.Store(item.SrcId, content)
 
             item.Created = time
+            item.Type = LocalTools.GetTypeByName(item.Filename)
+
             Log.Write(f"Got item '{item.Filename}' {size}b ({item.SrcId})")
 
 
@@ -188,13 +192,21 @@ class Local:
 
         return True
 
-        
-
-        return False
-
     def GetType(self):
         return f"Local ({self._rootdir})"
 
     def GetStatus(self):
         Log.Write(f"Local media directory is {self._rootdir}")
+
+
+class LocalTools:
+
+    def GetTypeByName(filename):
+        ext = path.splitext(filename)[-1].upper()
+        if ext in [".MKV", ".AVI", ".3GP", ".3G2", ".MP4", ".ASF", ".DIVX", ".M2T", ".M2TS", ".M4V", ".MMV", ".MOD", ".MOV", ".MPG", ".MTS", ".TOD", ".WMV"]:
+            return 'video'
+        if ext in [".JPG", ".PNG", ".GIF", ".BMP", ".HEIC", ".ICO", ".TIFF", ".WEBP", ".RAW"]:
+            return 'image'
+        return None
+
 

@@ -8,8 +8,9 @@ import Modules.Log as Log
 import Modules.Item as Item
 import Modules.Album as Album
 
-class Native:
+import Storages.Local as Local
 
+class Native:
 
     def __init__(self, rootdir):
         self._rootdir = path.normpath(rootdir)
@@ -33,6 +34,9 @@ class Native:
             if path.isdir(entryPath):
                 Native._getInfo(root, subDirs + [entry], entry, albums, items)
             else:
+                if Local.LocalTools.GetTypeByName(entry) is None:
+                    continue
+
                 size = path.getsize(entryPath)
                 item = next((i for i in items if i.Filename == entry and i.Size == size), None)
                 if item is None:
@@ -65,7 +69,6 @@ class Native:
 
         return (items, albums)
 
-
     def GetItem(self, item, cache):
         entryPath = path.join(self._rootdir, item.SrcId)
         try:
@@ -77,6 +80,8 @@ class Native:
                 cache.Store(item.SrcId, content)
 
             item.Created = time
+            item.Type = Local.LocalTools.GetTypeByName(item.Filename)
+
             Log.Write(f"Got item '{item.Filename}' {size}b ({item.SrcId})")
 
         except Exception as err:

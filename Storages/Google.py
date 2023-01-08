@@ -2,15 +2,20 @@
 # -*- coding: UTF-8 -*-
 
 # Required https://github.com/googleapis/google-api-python-client
+#  pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
 # How to set up API see https://developers.google.com/docs/api/quickstart/python
 # Save config file as a google-client_secret.json to the private directory (private/ by default)
 
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.errors import HttpError
+try: 
+    from googleapiclient.discovery import build
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    from googleapiclient.errors import HttpError
+except ImportError as err:
+    raise Exception("Google API modules not intalled. Please run 'pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib")
+
 
 from pathlib import Path
 from os import path
@@ -214,7 +219,6 @@ class Google:
     def _getDateTime(dateString):
         if dateString[-1:] == 'Z':
             return datetime.fromisoformat(dateString[:-1])
-            #return dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
         else:
             return datetime.fromisoformat(dateString)
 
@@ -236,7 +240,6 @@ class Google:
             albums = self._getAlbumsInfo(items, start, end)
         else:
             albums = []
-
         
         return (items, albums)
 
@@ -249,8 +252,10 @@ class Google:
                 if itemInfo['mediaMetadata']['video']['status'] != 'READY':
                     raise Exception(f"Invalid video status '{itemInfo['mediaMetadata']['video']['status']}'")
                 dKey = "dv"
+                item.Type='video'
             else:
                 dKey = "d"
+                item.Type='image'
             request = get(f"{itemInfo['baseUrl']}={dKey}")
             if not request.ok:
                 raise Exception(f"{request.reason} ({request.status_code})")
