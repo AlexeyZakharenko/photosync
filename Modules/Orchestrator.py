@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import Storages.Google as Google
-import Storages.Yandex as Yandex
+import Storages.YaDisk as YaDisk
 import Storages.Local as Local
 import Storages.Native as Native
 
@@ -11,13 +11,13 @@ import Modules.Log as Log
 def GetSource(type, privateDir, rootDir):
     if type == 'google':
         return Google.Google(privateDir)
-    if type == 'yandex':
-        return Yandex.Yandex(privateDir, rootDir)
+    if type == 'yadisk':
+        return YaDisk.YaDisk(privateDir, rootDir)
     if type == 'local':
         return Local.Local(rootDir)
     if type == 'native':
         return Native.Native(rootDir)
-    raise Exception(f"Unsupported source type '{type}'")
+    raise Exception(f"Unsupported storage type '{type}'")
 
 
 class Orchestrator:

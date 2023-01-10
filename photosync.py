@@ -40,7 +40,7 @@ try:
 
     parser.add_argument('--dst', 
             type=str, 
-            choices=['google', 'yandex', 'local'], 
+            choices=['google', 'yadisk', 'local'], 
             default=Default.Dst, 
             help=f"Destignation. By default '{Default.Dst}'.")
 

@@ -31,9 +31,12 @@ class Local:
 
     def __init__(self, rootdir):
         self._rootdir = path.normpath(rootdir)
+        self._photosdir = path.join(self._rootdir,PHOTOS_PATH)
+        self._albumssdir = path.join(self._rootdir, ALBUMS_PATH)
+
         Path(self._rootdir).mkdir(parents=True, exist_ok=True)
-        Path(path.join(self._rootdir,PHOTOS_PATH)).mkdir(parents=True, exist_ok=True)
-        Path(path.join(self._rootdir,ALBUMS_PATH)).mkdir(parents=True, exist_ok=True)
+        Path(self._photosdir).mkdir(parents=True, exist_ok=True)
+        Path(self._albumssdir).mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def _getSeconds(dt):
@@ -97,11 +100,11 @@ class Local:
 
             if scope == 'all' or scope == 'items':
                 Log.Write(f"Getting items info from Local...")
-                Local._getItems(path.join(self._rootdir,PHOTOS_PATH), [], items, startSec, endSec)
+                Local._getItems(self._photosdir, [], items, startSec, endSec)
                 Log.Write(f"Got info for {len(items)} items")
             if scope == 'all' or scope == 'albums':
                 Log.Write(f"Getting albums info from Local...")
-                Local._getAlbums(path.join(self._rootdir,ALBUMS_PATH), [], None, albums, items)
+                Local._getAlbums(self._albumssdir, [], None, albums, items)
                 Log.Write(f"Got info for {len(albums)} albums")
 
         except Exception as err:
@@ -110,7 +113,7 @@ class Local:
         return (items, albums)
 
     def GetItem(self, item, cache):
-        entryPath = path.join(self._rootdir, PHOTOS_PATH, item.SrcId)
+        entryPath = path.join(self._photosdir, item.SrcId)
         try:
             time = datetime.utcfromtimestamp(path.getmtime(entryPath))
             with open(entryPath, mode='rb') as file:
@@ -137,7 +140,7 @@ class Local:
 
             created = Local._getSeconds(item.Created)
             
-            dstPath = path.join(self._rootdir,PHOTOS_PATH,item.Created.strftime("%Y"),item.Created.strftime("%m"))
+            dstPath = path.join(self._photosdir,item.Created.strftime("%Y"),item.Created.strftime("%m"))
             if not path.isdir(dstPath):
                 Path(dstPath).mkdir(parents=True, exist_ok=True)
 
@@ -159,7 +162,7 @@ class Local:
     def PutAlbum(self, album):
         
         try:
-            album.DstId = path.join(self._rootdir,ALBUMS_PATH,album.Title)
+            album.DstId = path.join(self._albumssdir,album.Title)
             mkdir(album.DstId)
             Log.Write(f"Put album '{album.Title}' ({album.DstId})")
 
