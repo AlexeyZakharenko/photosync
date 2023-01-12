@@ -28,7 +28,8 @@ class YaDisk:
 
     def __init__(self, privatedir, rootdir):
         self._privatedir = path.normpath(privatedir)
-        self._rootdir = rootdir.replace("\\","/")
+        self._rootdir = YaDisk.join("disk:",rootdir.replace("\\","/"))
+        self._rootdir = self._rootdir.replace("//","/")
         Path(self._privatedir).mkdir(parents=True, exist_ok=True)
         if not path.exists(path.join(self._privatedir, TOKEN_FILE)):
             raise Exception(f"Please set up Yandex Disk REST API application accroding this manual: https://yandex.ru/dev/disk/rest/ and save OAuth token to {path.join(self._privatedir, TOKEN_FILE)}")
@@ -55,7 +56,7 @@ class YaDisk:
 
     @staticmethod
     def join(*path):
-        return "/".join(path)
+        return "/".join(path).replace("//","/")
 
     def GetType(self):
         return f"YaDisk ({path.join(self._privatedir, TOKEN_FILE)})"
@@ -100,8 +101,6 @@ class YaDisk:
                     albums.append(album)
 
                 album.Items.append(item.SrcId)
-                
-                
 
         for entry in dirs:
             self._getInfo(subDirs + [entry], entry, albums, items)
@@ -120,16 +119,20 @@ class YaDisk:
         try:
 
             self._service.download(entryPath, cache.GetFilename(item.SrcId))
-
             info = self._service.get_meta(entryPath)
             item.Type = info['media_type']
-            item.Created = info['exif']['date_time'].replace(tzinfo=None) if item.Type == 'image' else info['created'].replace(tzinfo=None)
+            if info.FIELDS.get('exif',None) != None and info['exif'].FIELDS.get('date_time', None) != None:
+                date = info['exif']['date_time'].replace(tzinfo=None)
+            else:
+                date = info['created'].replace(tzinfo=None)
+
+            item.Created = date
             item.Size = info['size']
             Log.Write(f"Got item '{item.Filename}' {item.Size}b ({item.SrcId})")
 
-
         except Exception as err:
             Log.Write(f"ERROR Can't get item '{item.SrcId}' from Local: {err}")
+            cache.Remove(item.SrcId)
             return False
 
         return True
