@@ -23,16 +23,15 @@ class Native:
     def GetStatus(self):
         Log.Write(f"Native root directory is {self._rootdir}")
 
-    @staticmethod
-    def _getInfo(root, subDirs, albumTitle, albums, items):
+    def _getInfo(self, subDirs, albumTitle, albums, items):
         subDir = ''
         for s in subDirs:
             subDir = path.join(subDir, s)
-        startDir = path.join(root, subDir)
+        startDir = path.join(self._rootdir, subDir)
         for entry in listdir(startDir):
             entryPath = path.join(startDir, entry)
             if path.isdir(entryPath):
-                Native._getInfo(root, subDirs + [entry], entry, albums, items)
+                self._getInfo(subDirs + [entry], entry, albums, items)
             else:
                 if Local.LocalTools.GetTypeByName(entry) is None:
                     continue
@@ -61,7 +60,7 @@ class Native:
         # Scan all items to avoid duplicate copies
         try:
             Log.Write(f"Getting items and albums info from Native...")
-            Native._getInfo(path.join(self._rootdir), [], None, albums, items)
+            self._._getInfo([], None, albums, items)
             Log.Write(f"Got info for {len(items)} items and {len(albums)} albums")
 
         except Exception as err:
