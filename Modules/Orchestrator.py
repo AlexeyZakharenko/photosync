@@ -37,7 +37,7 @@ class Orchestrator:
             return self._invokeSync()
         return False
 
-    def __init__(self, db, cache, src, dst, start, end, scope):
+    def __init__(self, db, cache, src, dst, start, end, scope, excludeAlbums):
         self._db = db
         self._cache = cache
         self._src = src
@@ -45,6 +45,7 @@ class Orchestrator:
         self._start = start
         self._end = end
         self._scope = scope
+        self._excludeAlbums = excludeAlbums
 
     def __del__(self):
         del self._db
