@@ -14,11 +14,11 @@ class Cache:
         self._cachedir = path.normpath(cachedir)
         Path(self._cachedir).mkdir(parents=True, exist_ok=True)
 
+    @staticmethod
     def _normalizeName(filename):
         m = hashlib.md5()
         m.update(filename.encode('utf-8'))
         return m.hexdigest()
-        
 
     def Store(self, filename, content):
         fullname = path.join(self._cachedir, Cache._normalizeName(filename))

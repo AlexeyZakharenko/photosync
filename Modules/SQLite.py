@@ -227,7 +227,6 @@ sync INTEGER NOT NULL)
 
             Log.Write(f"Got {len(result)} items to sync")
         
-        
         except Exception as err:
             Log.Write(f"ERROR Can't get records: {err}")
         
@@ -245,7 +244,6 @@ sync INTEGER NOT NULL)
                     result.append(Link.Link(record[0],record[1]))
 
             Log.Write(f"Got {len(result)} links to sync")
-        
         
         except Exception as err:
             Log.Write(f"ERROR Can't get records: {err}")
@@ -297,7 +295,6 @@ sync INTEGER NOT NULL)
 
         return True
 
-
     def MarkAlbumSync(self, album, sync=1):
         self._connect()
         cursor = self._connection.cursor()
@@ -309,7 +306,6 @@ sync INTEGER NOT NULL)
             Log.Write(f"ERROR Can't mark album {album.SrcId} as sync: {err}")
             return False
         return True
-        
 
     def MarkLinkSync(self, link, sync=1):
         self._connect()
@@ -324,15 +320,32 @@ sync INTEGER NOT NULL)
 
         return True
 
-    def Clean(self, scope = 'all'):
+    def Clean(self, scope = 'all', excludeAlbums=None):
         self._connect()
         cursor = self._connection.cursor()
-        if scope == 'all' or scope =='items':
-            cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
-            Log.Write(f"Clean sync flags in table {TABLE_ITEMS}")
-        if scope == 'all' or scope =='albums':
-            cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
-            Log.Write(f"Clean sync flags in table {TABLE_ALBUMS}")
-            cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
-            Log.Write(f"Clean sync flags in table {TABLE_LINKS}")
+        if excludeAlbums != None:
+            for albumTitle in excludeAlbums:
+                cursor.execute(f"SELECT srcId FROM {TABLE_ALBUMS} WHERE title = ?", (albumTitle,))
+                records = cursor.fetchmany(2)
+                if len(records) == 0:
+                    continue;
+                if len(records) > 1:
+                    raise Exception(f"Album {albumTitle} has more than one record at table {TABLE_ALBUMS}")
+                albumId = records[0][0];
+                cursor.execute(f"DELETE FROM {TABLE_LINKS} WHERE albumId = ?", (albumId,))
+                cursor.execute(f"DELETE FROM {TABLE_ALBUMS} WHERE srcId = ?", (albumId,))
+                self._connection.commit()
+                Log.Write(f"Delete info for album '{albumTitle}'")
+                
+
+        else:
+            if scope == 'all' or scope =='items':
+                cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
+                Log.Write(f"Clean sync flags in table {TABLE_ITEMS}")
+            if scope == 'all' or scope =='albums':
+                cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
+                Log.Write(f"Clean sync flags in table {TABLE_ALBUMS}")
+                cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
+                Log.Write(f"Clean sync flags in table {TABLE_LINKS}")
+
         self._connection.commit()

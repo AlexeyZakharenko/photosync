@@ -2,20 +2,24 @@
 # -*- coding: UTF-8 -*-
 
 # Required https://github.com/googleapis/google-api-python-client
+#  pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
 
 # How to set up API see https://developers.google.com/docs/api/quickstart/python
 # Save config file as a google-client_secret.json to the private directory (private/ by default)
 
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaFileUpload
+try: 
+    from googleapiclient.discovery import build
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    from googleapiclient.errors import HttpError
+except ImportError as err:
+    raise Exception("Google API modules not intalled. Please run 'pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib")
+
 
 from pathlib import Path
 from os import path
-from datetime import datetime, timezone
+from datetime import datetime
 
 from requests import get, post
 
@@ -75,10 +79,11 @@ class Google:
         except HttpError as err:
             Log.Write(f"Can't connect to Google: {err}")
 
-    def _getBody(start, end):
+    @staticmethod
+    def _getBody(start, end): 
 
         body = {
-                "pageSize": 100,
+                "pageSize": "100",
         }
         
         # Add dates if required
@@ -89,20 +94,20 @@ class Google:
                 end = datetime.max.date()
 
             body = {
-                "pageSize": 100,
+                "pageSize": "100",
                 "filters": {
                     "dateFilter": {
                         "ranges": [
                             {
                                 "startDate": {
-                                    "year": start.year,
-                                    "month": start.month,
-                                    "day": start.day
+                                    "year": f"{start.year}",
+                                    "month": f"{start.month}",
+                                    "day": f"{start.day}"
                                 },
                                 "endDate": {
-                                    "year": end.year,
-                                    "month": end.month,
-                                    "day": end.day
+                                    "year": f"{end.year}",
+                                    "month": f"{end.month}",
+                                    "day": f"{end.day}"
                                 }
                             }
                         ]
@@ -142,7 +147,7 @@ class Google:
 
         return result
 
-    def _getAlbumsInfoByType(self, type, albums, items, start=None, end=None):
+    def _getAlbumsInfoByType(self, type, albums, items, start=None, end=None, excludeAlbums=None):
             n=0
             Log.Write(f"Getting {type} albums info from Google...")
             nextPageToken = None
@@ -183,8 +188,13 @@ class Google:
 
                             album.Items.append(ai['id'])        
 
+                    # В исключениях
+                    if excludeAlbums != None and album.Title in excludeAlbums:
+                        continue;
+
                     if len(album.Items) > 0:        
                         albums.append(album)    
+
                     n += 1 
                     if n % 10 == 0:
                         Log.Write(f"Scan info for {n} {type} albums")
@@ -192,14 +202,14 @@ class Google:
             if n % 10 != 0:
                 Log.Write(f"Scan info for {n} {type} albums")
 
-    def _getAlbumsInfo(self, items, start=None, end=None):
+    def _getAlbumsInfo(self, items, start=None, end=None, excludeAlbums=None):
         self._connect()
         albums = []
 
         try:
 
-            self._getAlbumsInfoByType('private', albums, items, start, end)
-            self._getAlbumsInfoByType('shared', albums, items, start, end)
+            self._getAlbumsInfoByType('private', albums, items, start, end, excludeAlbums)
+            self._getAlbumsInfoByType('shared', albums, items, start, end, excludeAlbums)
 
             Log.Write(f"Successfully got info for {len(albums)} albums")
 
@@ -210,10 +220,10 @@ class Google:
 
         return albums
 
+    @staticmethod
     def _getDateTime(dateString):
         if dateString[-1:] == 'Z':
             return datetime.fromisoformat(dateString[:-1])
-            #return dt.replace(tzinfo=timezone.utc).astimezone(tz=None)
         else:
             return datetime.fromisoformat(dateString)
 
@@ -224,7 +234,7 @@ class Google:
         self._connect()
         Log.Write(self.GetType())
 
-    def GetInfo(self, start=None, end=None, scope='all'):
+    def GetInfo(self, start=None, end=None, scope='all', excludeAlbums=None):
 
         items = []
         if scope == 'all' or scope == 'items':
@@ -232,10 +242,9 @@ class Google:
             
 
         if scope == 'all' or scope == 'albums':
-            albums = self._getAlbumsInfo(items, start, end)
+            albums = self._getAlbumsInfo(items, start, end, excludeAlbums)
         else:
             albums = []
-
         
         return (items, albums)
 
@@ -248,8 +257,10 @@ class Google:
                 if itemInfo['mediaMetadata']['video']['status'] != 'READY':
                     raise Exception(f"Invalid video status '{itemInfo['mediaMetadata']['video']['status']}'")
                 dKey = "dv"
+                item.Type='video'
             else:
                 dKey = "d"
+                item.Type='image'
             request = get(f"{itemInfo['baseUrl']}={dKey}")
             if not request.ok:
                 raise Exception(f"{request.reason} ({request.status_code})")
@@ -269,7 +280,7 @@ class Google:
 
         return True
 
-    def _uploadMedia(self, name, content):
+    def _uploadMedia(self, content):
 
         upload_url = "https://photoslibrary.googleapis.com/v1/uploads"
         size = len(content)
@@ -302,7 +313,7 @@ class Google:
         self._connect()
         try:
 
-            token = self._uploadMedia(item.Filename, cache.Get(item.SrcId))
+            token = self._uploadMedia(cache.Get(item.SrcId))
             
             response = self._service.mediaItems().batchCreate(body={
                 "newMediaItems": [

@@ -2,18 +2,22 @@
 # -*- coding: UTF-8 -*-
 
 import Storages.Google as Google
+import Storages.YaDisk as YaDisk
 import Storages.Local as Local
 import Storages.Native as Native
+
 import Modules.Log as Log
 
 def GetSource(type, privateDir, rootDir):
     if type == 'google':
         return Google.Google(privateDir)
+    if type == 'yadisk':
+        return YaDisk.YaDisk(privateDir, rootDir)
     if type == 'local':
         return Local.Local(rootDir)
     if type == 'native':
         return Native.Native(rootDir)
-    raise Exception(f"Unsupported source type '{type}'")
+    raise Exception(f"Unsupported storage type '{type}'")
 
 
 class Orchestrator:
@@ -33,7 +37,7 @@ class Orchestrator:
             return self._invokeSync()
         return False
 
-    def __init__(self, db, cache, src, dst, start, end, scope):
+    def __init__(self, db, cache, src, dst, start, end, scope, excludeAlbums):
         self._db = db
         self._cache = cache
         self._src = src
@@ -41,6 +45,7 @@ class Orchestrator:
         self._start = start
         self._end = end
         self._scope = scope
+        self._excludeAlbums = excludeAlbums
 
     def __del__(self):
         del self._db
@@ -59,12 +64,11 @@ class Orchestrator:
         return True
 
     def _invokeClean(self):
-        if input(f"Are You sure to clean {self._scope} data at '{self._db.GetDBFile()}'? (Yes/No) ") != 'Yes':
+        if input(f"Are You sure to clean {self._scope if self._excludeAlbums == None else 'and remove excluded albums'} data at '{self._db.GetDBFile()}'? (Yes/No) ") != 'Yes':
             return True
-        Log.Write("Clean sync results...")
-        self._db.Clean(self._scope)
+        Log.Write("Clean data...")
+        self._db.Clean(self._scope, self._excludeAlbums)
         self._cache.Clean()
-        Log.Write("Done! Don't forget to erase destination data.")
         return True
 
     def _invokeStatus(self):
@@ -77,7 +81,7 @@ class Orchestrator:
         end = f" to {self._end.date()}" if self._end != None else ""
         Log.Write(f"Getting info from source {self._src.GetType()}{start}{end}...")
 
-        (items, albums) = self._src.GetInfo(self._start, self._end, self._scope)
+        (items, albums) = self._src.GetInfo(self._start, self._end, self._scope, self._excludeAlbums)
 
         if self._scope == 'all' or self._scope == 'items':
             self._db.UpdateItemsInfo(items)
@@ -134,8 +138,6 @@ class Orchestrator:
                     if album.DstId is None:
                         self._db.MarkAlbumSync(album, 0)
 
-
-
             Log.Write(f"Put {n} of {len(links)} links and {nAlbums} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(links)-n} links skipped")
 
     def _invokePut(self):
@@ -148,7 +150,6 @@ class Orchestrator:
             self._putLinks()
 
         return True
-
 
 
 
