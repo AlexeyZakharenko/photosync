@@ -7,9 +7,7 @@
 
 ### Google
 
-Для работы необходимы библиотеки клиента Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project). Да, проект надо опубликовать, иначе токен авторизации не будет перевыпускаться.
-
-По умолчанию ищет JSON-файл клиента Google в _private/google-client_secret.json_.
+Для работы необходимы библиотеки клиента Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project, scope: https://www.googleapis.com/auth/photoslibrary). Да, проект надо опубликовать, иначе токен авторизации не будет перевыпускаться. Cоздать для него OAuth 2.0 Client Сredentials () и сохранить его json в подпапку _/private_ проекта: _private/google-client_secret.json_.
 
 Забирает все медиафайлы, включая созданные гуглом коллажи и анимации, в максимально доступном через API качестве. Оригинальные файлы этот API отдавть не умеет, так что имейте ввиду. Геолокации Google также не отдает, поэтому без них.
 
@@ -19,7 +17,7 @@
 
 Для работы необходима библиотеки https://github.com/ivknv/yadisk. Также понадобится получить токен для доступа к Яндекс.Диску в соответствии с этой инструкцией: https://yandex.ru/dev/disk/rest/. 
 
-По умолчанию ищет TXT-файл с токеном _private/yandex_token.txt_.
+По умолчанию ищет TXT-файл с токеном _private/yandex_token.txt_. Токен выпускается на год, так что надо будет поставить напоминалку на его перевыпуск.
 
 К сожалению, текущая реализация API от Яндекса не позволяет работать с альбомами и создавать линки на файлы. Поэтому все фото загружаются в указанный корень, а альбомы создаются как папки, в которых создаются копии файлов. 
 
@@ -41,8 +39,7 @@
   `pip install exif`<br>
   `pip install yadisk`<br>
   `pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib`
-
-3) Настроить проект c Photos Library API, создать для него OAuth 2.0 Client Сredentials (scope: https://www.googleapis.com/auth/photoslibrary) и сохранить его json в подпапку _/private_ проекта: _private/google-client_secret.json_
+3) При необходимости настроить проекты в Google и Яндекс
 4) Изучить `photosync.py -h`
 5) Попробовать запустить `photosync.py sync`, при необходимости указав параметры
 
