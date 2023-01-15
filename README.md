@@ -7,7 +7,7 @@
 
 ### Google
 
-Для работы необходимы библиотеки клиента Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project, scope: https://www.googleapis.com/auth/photoslibrary). Да, проект надо опубликовать, иначе токен авторизации не будет перевыпускаться. Cоздать для него OAuth 2.0 Client Сredentials () и сохранить его json в подпапку _/private_ проекта: _private/google-client_secret.json_.
+Для работы необходимы библиотеки клиента Google API (https://github.com/googleapis/google-api-python-client) и Google Cloud проект с включенным Photos Library API (https://developers.google.com/workspace/guides/create-project). Да, проект надо опубликовать, иначе токен авторизации не будет перевыпускаться. Cоздать для него OAuth 2.0 Client Сredentials (scope: https://www.googleapis.com/auth/photoslibrary) и сохранить его json в подпапку _/private_ проекта: _private/google-client_secret.json_.
 
 Забирает все медиафайлы, включая созданные гуглом коллажи и анимации, в максимально доступном через API качестве. Оригинальные файлы этот API отдавть не умеет, так что имейте ввиду. Геолокации Google также не отдает, поэтому без них.
 
