@@ -81,7 +81,7 @@ class Local:
                 continue
             entryPath = path.join(startDir, entry)
             if path.isdir(entryPath):
-                Local._getAlbums(root, subDirs + [entry], entry, albums, items)
+                Local._getAlbums(root, subDirs + [entry], entry, albums, items, excludeAlbums)
             else:
                 # Это корень, не альбом
                 if albumTitle is None:
@@ -129,7 +129,7 @@ class Local:
         entryPath = path.join(self._photosdir, item.SrcId)
         try:
             type = LocalTools.GetTypeByName(item.Filename)
-            time = LocalTools.GetDateTime(path.get.getmtime(entryPath), type)
+            time = LocalTools.GetDateTime(entryPath, type)
             with open(entryPath, mode='rb') as file:
                 content = file.read()
                 size = len(content)

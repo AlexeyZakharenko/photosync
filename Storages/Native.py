@@ -40,7 +40,6 @@ class Native:
             else:
                 if Local.LocalTools.GetTypeByName(entry) is None:
                     continue
-
                 size = path.getsize(entryPath)
                 item = next((i for i in items if i.Filename == entry and i.Size == size), None)
                 if item is None:
