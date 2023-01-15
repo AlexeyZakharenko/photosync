@@ -64,12 +64,11 @@ class Orchestrator:
         return True
 
     def _invokeClean(self):
-        if input(f"Are You sure to clean {self._scope} data at '{self._db.GetDBFile()}'? (Yes/No) ") != 'Yes':
+        if input(f"Are You sure to clean {self._scope if self._excludeAlbums == None else 'and remove excluded albums'} data at '{self._db.GetDBFile()}'? (Yes/No) ") != 'Yes':
             return True
-        Log.Write("Clean sync results...")
-        self._db.Clean(self._scope)
+        Log.Write("Clean data...")
+        self._db.Clean(self._scope, self._excludeAlbums)
         self._cache.Clean()
-        Log.Write("Done! Don't forget to erase destination data.")
         return True
 
     def _invokeStatus(self):

@@ -320,15 +320,32 @@ sync INTEGER NOT NULL)
 
         return True
 
-    def Clean(self, scope = 'all'):
+    def Clean(self, scope = 'all', excludeAlbums=None):
         self._connect()
         cursor = self._connection.cursor()
-        if scope == 'all' or scope =='items':
-            cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
-            Log.Write(f"Clean sync flags in table {TABLE_ITEMS}")
-        if scope == 'all' or scope =='albums':
-            cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
-            Log.Write(f"Clean sync flags in table {TABLE_ALBUMS}")
-            cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
-            Log.Write(f"Clean sync flags in table {TABLE_LINKS}")
+        if excludeAlbums != None:
+            for albumTitle in excludeAlbums:
+                cursor.execute(f"SELECT srcId FROM {TABLE_ALBUMS} WHERE title = ?", (albumTitle,))
+                records = cursor.fetchmany(2)
+                if len(records) == 0:
+                    continue;
+                if len(records) > 1:
+                    raise Exception(f"Album {albumTitle} has more than one record at table {TABLE_ALBUMS}")
+                albumId = records[0][0];
+                cursor.execute(f"DELETE FROM {TABLE_LINKS} WHERE albumId = ?", (albumId,))
+                cursor.execute(f"DELETE FROM {TABLE_ALBUMS} WHERE srcId = ?", (albumId,))
+                self._connection.commit()
+                Log.Write(f"Delete info for album '{albumTitle}'")
+                
+
+        else:
+            if scope == 'all' or scope =='items':
+                cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
+                Log.Write(f"Clean sync flags in table {TABLE_ITEMS}")
+            if scope == 'all' or scope =='albums':
+                cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
+                Log.Write(f"Clean sync flags in table {TABLE_ALBUMS}")
+                cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
+                Log.Write(f"Clean sync flags in table {TABLE_LINKS}")
+
         self._connection.commit()

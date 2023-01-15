@@ -99,13 +99,15 @@ try:
 
     parameters = parser.parse_args (sys.argv[1:])
 
+    def isStr(s):
+        return len(s)>0
     albums = None
     if parameters.excludealbums != None:
         if path.isfile(parameters.excludealbums):
             with open(parameters.excludealbums, 'r', encoding='utf-8') as f:
-                albums = [a.strip() for a in f.readlines()]
+                albums = list(filter(isStr, map(str.strip,f.readlines())))
         else:
-           albums = [a.strip() for a in parameters.excludealbums.split(',')]
+            albums = list(filter(isStr, map(str.strip,parameters.excludealbums.split(','))))                    
 
 
     orchestrator = Orchestrator.Orchestrator(
