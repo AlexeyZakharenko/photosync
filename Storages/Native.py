@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+
 from os import path, listdir
 from datetime import datetime
 
@@ -9,6 +10,8 @@ import Modules.Item as Item
 import Modules.Album as Album
 
 import Storages.Local as Local
+
+
 
 class Native:
 
@@ -23,15 +26,17 @@ class Native:
     def GetStatus(self):
         Log.Write(f"Native root directory is {self._rootdir}")
 
-    def _getInfo(self, subDirs, albumTitle, albums, items):
+    def _getInfo(self, subDirs, albumTitle, albums, items, start=None, end=None, scope='all', excludeAlbums=None):
         subDir = ''
         for s in subDirs:
             subDir = path.join(subDir, s)
         startDir = path.join(self._rootdir, subDir)
         for entry in listdir(startDir):
+            if entry.startswith('.'):
+                continue
             entryPath = path.join(startDir, entry)
             if path.isdir(entryPath):
-                self._getInfo(subDirs + [entry], entry, albums, items)
+                self._getInfo(subDirs + [entry], entry, albums, items, start, end, scope, excludeAlbums)
             else:
                 if Local.LocalTools.GetTypeByName(entry) is None:
                     continue
@@ -46,6 +51,10 @@ class Native:
                 if albumTitle is None:
                     continue;
 
+                # В исключениях
+                if excludeAlbums != None and albumTitle in excludeAlbums:
+                    continue;
+
                 # Раньше не добавляли?
                 album = next((a for a in albums if a.SrcId == subDir), None)
                 if album is None:
@@ -54,13 +63,13 @@ class Native:
                 
                 album.Items.append(item.SrcId)
 
-    def GetInfo(self, start=None, end=None, scope='all'):
+    def GetInfo(self, start=None, end=None, scope='all', excludeAlbums=None):
         items = []
         albums = []
         # Scan all items to avoid duplicate copies
         try:
             Log.Write(f"Getting items and albums info from Native...")
-            self._._getInfo([], None, albums, items)
+            self._getInfo([], None, albums, items, start, end, scope, excludeAlbums)
             Log.Write(f"Got info for {len(items)} items and {len(albums)} albums")
 
         except Exception as err:
@@ -71,15 +80,15 @@ class Native:
     def GetItem(self, item, cache):
         entryPath = path.join(self._rootdir, item.SrcId)
         try:
-            time = datetime.utcfromtimestamp(path.getmtime(entryPath))
-
+            type = Local.LocalTools.GetTypeByName(item.Filename)
+            time = Local.LocalTools.GetDateTime(entryPath, type)
             with open(entryPath, mode='rb') as file:
                 content = file.read()
                 size = len(content)
                 cache.Store(item.SrcId, content)
 
             item.Created = time
-            item.Type = Local.LocalTools.GetTypeByName(item.Filename)
+            item.Type = type
 
             Log.Write(f"Got item '{item.Filename}' {size}b ({item.SrcId})")
 

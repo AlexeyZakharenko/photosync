@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
+# Required https://pypi.org/project/exif/
+# pip install exif
+
+
 # Interface for sources
 #
 # -- common methodes
@@ -19,6 +23,7 @@
 from pathlib import Path
 from os import path, utime, mkdir, link, listdir
 from datetime import datetime
+from exif import Image
 
 import Modules.Log as Log
 import Modules.Item as Item
@@ -49,6 +54,8 @@ class Local:
             subDir = path.join(subDir, s)
         startDir = path.join(root, subDir)
         for entry in listdir(startDir):
+            if entry.startswith('.'):
+                continue
             entryPath = path.join(startDir, entry)
             if path.isdir(entryPath):
                 Local._getItems(root, subDirs + [entry], items, start, end)
@@ -64,12 +71,14 @@ class Local:
                 items.append(Item.Item(path.join(subDir, entry), entry))
 
     @staticmethod
-    def _getAlbums(root, subDirs, albumTitle, albums, items):
+    def _getAlbums(root, subDirs, albumTitle, albums, items, excludeAlbums):
         subDir = ''
         for s in subDirs:
             subDir = path.join(subDir, s)
         startDir = path.join(root, subDir)
         for entry in listdir(startDir):
+            if entry.startswith('.'):
+                continue
             entryPath = path.join(startDir, entry)
             if path.isdir(entryPath):
                 Local._getAlbums(root, subDirs + [entry], entry, albums, items)
@@ -83,6 +92,10 @@ class Local:
                 if item is None:
                     continue
 
+                # В исключениях
+                if excludeAlbums != None and albumTitle in excludeAlbums:
+                    continue;
+
                 # Раньше не добавляли?
                 album = next((a for a in albums if a.SrcId == subDir), None)
                 if album is None:
@@ -91,7 +104,7 @@ class Local:
                 
                 album.Items.append(item.SrcId)
 
-    def GetInfo(self, start=None, end=None, scope='all'):
+    def GetInfo(self, start=None, end=None, scope='all', excludeAlbums=None):
         items = []
         albums = []
         try:
@@ -104,7 +117,7 @@ class Local:
                 Log.Write(f"Got info for {len(items)} items")
             if scope == 'all' or scope == 'albums':
                 Log.Write(f"Getting albums info from Local...")
-                Local._getAlbums(self._albumssdir, [], None, albums, items)
+                Local._getAlbums(self._albumssdir, [], None, albums, items, excludeAlbums)
                 Log.Write(f"Got info for {len(albums)} albums")
 
         except Exception as err:
@@ -115,14 +128,15 @@ class Local:
     def GetItem(self, item, cache):
         entryPath = path.join(self._photosdir, item.SrcId)
         try:
-            time = datetime.utcfromtimestamp(path.getmtime(entryPath))
+            type = LocalTools.GetTypeByName(item.Filename)
+            time = LocalTools.GetDateTime(path.get.getmtime(entryPath), type)
             with open(entryPath, mode='rb') as file:
                 content = file.read()
                 size = len(content)
                 cache.Store(item.SrcId, content)
 
             item.Created = time
-            item.Type = LocalTools.GetTypeByName(item.Filename)
+            item.Type = type
 
             Log.Write(f"Got item '{item.Filename}' {size}b ({item.SrcId})")
 
@@ -212,4 +226,18 @@ class LocalTools:
             return 'image'
         return None
 
+    def GetDateTime(filePath, type):
+        dt = None
+        if type == 'image':
+            try:
+                with open(filePath, 'rb') as image_file:
+                    imageInfo = Image(image_file)
+                if imageInfo.has_exif:
+                    dt = datetime.strptime(imageInfo.datetime, '%Y:%m:%d %H:%M:%S').replace(tzinfo=None) 
+            except:
+                dt = None
 
+        if dt == None:
+           dt = datetime.utcfromtimestamp(path.getmtime(filePath)) 
+
+        return dt

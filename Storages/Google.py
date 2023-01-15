@@ -147,7 +147,7 @@ class Google:
 
         return result
 
-    def _getAlbumsInfoByType(self, type, albums, items, start=None, end=None):
+    def _getAlbumsInfoByType(self, type, albums, items, start=None, end=None, excludeAlbums=None):
             n=0
             Log.Write(f"Getting {type} albums info from Google...")
             nextPageToken = None
@@ -188,8 +188,13 @@ class Google:
 
                             album.Items.append(ai['id'])        
 
+                    # В исключениях
+                    if excludeAlbums != None and album.Title in excludeAlbums:
+                        continue;
+
                     if len(album.Items) > 0:        
                         albums.append(album)    
+
                     n += 1 
                     if n % 10 == 0:
                         Log.Write(f"Scan info for {n} {type} albums")
@@ -197,14 +202,14 @@ class Google:
             if n % 10 != 0:
                 Log.Write(f"Scan info for {n} {type} albums")
 
-    def _getAlbumsInfo(self, items, start=None, end=None):
+    def _getAlbumsInfo(self, items, start=None, end=None, excludeAlbums=None):
         self._connect()
         albums = []
 
         try:
 
-            self._getAlbumsInfoByType('private', albums, items, start, end)
-            self._getAlbumsInfoByType('shared', albums, items, start, end)
+            self._getAlbumsInfoByType('private', albums, items, start, end, excludeAlbums)
+            self._getAlbumsInfoByType('shared', albums, items, start, end, excludeAlbums)
 
             Log.Write(f"Successfully got info for {len(albums)} albums")
 
@@ -229,7 +234,7 @@ class Google:
         self._connect()
         Log.Write(self.GetType())
 
-    def GetInfo(self, start=None, end=None, scope='all'):
+    def GetInfo(self, start=None, end=None, scope='all', excludeAlbums=None):
 
         items = []
         if scope == 'all' or scope == 'items':
@@ -237,7 +242,7 @@ class Google:
             
 
         if scope == 'all' or scope == 'albums':
-            albums = self._getAlbumsInfo(items, start, end)
+            albums = self._getAlbumsInfo(items, start, end, excludeAlbums)
         else:
             albums = []
         

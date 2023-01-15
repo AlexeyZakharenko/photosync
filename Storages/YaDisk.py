@@ -66,7 +66,7 @@ class YaDisk:
         Log.Write(self.GetType())
 
 
-    def _getInfo(self, subDirs, albumTitle, albums, items):
+    def _getInfo(self, subDirs, albumTitle, albums, items, start=None, end=None, scope='all', excludeAlbums=None):
 
         subDir = YaDisk.join(*subDirs)
 
@@ -94,23 +94,26 @@ class YaDisk:
                 if albumTitle is None:
                     continue
 
+                # В исключениях
+                if excludeAlbums != None and albumTitle in excludeAlbums:
+                    continue;
+
                 # Теперь альбом
                 album = next((a for a in albums if a.SrcId == subDir), None)
                 if album is None:
                     album = Album.Album(subDir, albumTitle)
                     albums.append(album)
-
                 album.Items.append(item.SrcId)
 
         for entry in dirs:
-            self._getInfo(subDirs + [entry], entry, albums, items)
+            self._getInfo(subDirs + [entry], entry, albums, items, start, end, scope, excludeAlbums)
 
 
-    def GetInfo(self, start=None, end=None, scope='all'):
+    def GetInfo(self, start=None, end=None, scope='all', excludeAlbums=None):
         self._connect()
         items = []
         albums = []
-        self._getInfo([], None, albums, items)
+        self._getInfo([], None, albums, items, start=None, end=None, scope='all', excludeAlbums=None)
         return (items, albums)
 
     def GetItem(self, item, cache):

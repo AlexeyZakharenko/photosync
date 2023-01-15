@@ -82,7 +82,7 @@ class Orchestrator:
         end = f" to {self._end.date()}" if self._end != None else ""
         Log.Write(f"Getting info from source {self._src.GetType()}{start}{end}...")
 
-        (items, albums) = self._src.GetInfo(self._start, self._end, self._scope)
+        (items, albums) = self._src.GetInfo(self._start, self._end, self._scope, self._excludeAlbums)
 
         if self._scope == 'all' or self._scope == 'items':
             self._db.UpdateItemsInfo(items)
