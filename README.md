@@ -109,6 +109,6 @@
 
 Каждую ночь на домашнем сервере запускается скрипт, синхронизирующий данные из этого аккаунта в локальное хранилище и на Яндекс.Диск:
 
-`python -src google -dst local --dstroot /share/photos/google --dbfile db/local.db --fromdays 7`
+`python ./photosync.py -src google -dst local --dstroot /share/photos/google --dbfile db/local.db --fromdays 7`
 
-`python -src google -dst yandex --dstroot /google --dbfile db/yandex.db --fromdays 7`
+`python ./photosync.py -src google -dst yandex --dstroot /google --dbfile db/yandex.db --fromdays 7`
