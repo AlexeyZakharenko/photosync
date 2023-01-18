@@ -121,7 +121,7 @@ class YaDisk:
         entryPath = YaDisk.join(self._rootdir, item.SrcId)
         try:
 
-            self._service.download(entryPath, cache.GetFilename(item.SrcId))
+            self._service.download(entryPath, cache.GetFilename(item.SrcId), timeout=None)
             info = self._service.get_meta(entryPath)
             item.Type = info['media_type']
             if info.FIELDS.get('exif',None) != None and info['exif'].FIELDS.get('date_time', None) != None:
@@ -148,7 +148,7 @@ class YaDisk:
             self._service.upload(cache.GetFilename(item.SrcId), dstId, headers={
                 "media_type": item.Type, 
                 "created" : item.Created.isoformat()
-            }, overwrite=True)
+            }, overwrite=True, timeout=None)
 
             item.DstId = dstId
             Log.Write(f"Put item '{item.Filename}' ({item.DstId})")
