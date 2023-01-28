@@ -132,7 +132,7 @@ class Google:
                 items = request.get('mediaItems', [])
                 nextPageToken = request.get('nextPageToken', '')
                 for item in items:
-                    result.append(Item.Item(item['id'], item['filename']))
+                    result.append(Item.Item(item['id'], item['filename'], patchId=Google._getPatchId(item['filename'], item['mediaMetadata']['creationTime'])))
                     if len(result) % 1000 == 0:
                         Log.Write(f"Got info for {len(result)} items")
 
@@ -160,7 +160,7 @@ class Google:
                 else:
                     request = self._service.albums().list(pageSize = 50, pageToken = nextPageToken).execute()
                     albumRecords = request.get('albums', [])
-                
+
                 nextPageToken = request.get('nextPageToken', '')
 
                 for a in albumRecords:
@@ -184,7 +184,7 @@ class Google:
                             if end != None and Google._getDateTime(ai['mediaMetadata']['creationTime']).date() > end.date():
                                 continue;
                             if next((i for i in items if i.SrcId == ai['id']), None) is None:
-                                items.append(Item.Item(ai['id'], ai['filename']))
+                                items.append(Item.Item(ai['id'], ai['filename'], patchId=Google._getPatchId(ai['filename'], ai['mediaMetadata']['creationTime'])))
 
                             album.Items.append(ai['id'])        
 
@@ -219,6 +219,15 @@ class Google:
                 raise Exception("Quota exceeded for Google service")
 
         return albums
+
+
+    @staticmethod
+    def _getPatchId(filename, date):
+        return f"{filename.lower()}:{Google._getSeconds(Google._getDateTime(date))}";
+
+    @staticmethod
+    def _getSeconds(dt):
+        return int((dt-datetime(1970,1,1)).total_seconds())
 
     @staticmethod
     def _getDateTime(dateString):

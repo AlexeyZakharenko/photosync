@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 class Item():
-    def __init__(self, srcId, filename, dstId=None, created=None, type=None, size=None, sha256=None):
+    def __init__(self, srcId, filename, dstId=None, created=None, type=None, size=None, sha256=None, patchId=None):
         self.SrcId = srcId
         self.Filename = filename
         self.DstId = dstId
@@ -10,3 +10,4 @@ class Item():
         self.Type=type
         self.Size = size
         self.SHA256 = sha256
+        self.PatchId = patchId
