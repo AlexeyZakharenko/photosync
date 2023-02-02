@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import Storages.Google as Google
+import Storages.Takeout as Takeout
 import Storages.YaDisk as YaDisk
 import Storages.Local as Local
 import Storages.Native as Native
@@ -11,6 +12,8 @@ import Modules.Log as Log
 def GetSource(type, privateDir, rootDir):
     if type == 'google':
         return Google.Google(privateDir)
+    if type == 'takeout':
+        return Takeout.Takeout(rootDir)
     if type == 'yadisk':
         return YaDisk.YaDisk(privateDir, rootDir)
     if type == 'local':
