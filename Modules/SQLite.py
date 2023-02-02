@@ -50,12 +50,19 @@ class DB(object):
         if record[0] == 0:
             cursor.execute(f"""CREATE TABLE IF NOT EXISTS {TABLE_ITEMS}(
 srcId TEXT PRIMARY KEY,
+patchId TEXT UNIQUE,
 filename TEXT UNIQUE,
 dstId TEXT UNIQUE,
 sync INTEGER)
 """)
             self._connection.commit()
             Log.Write(f"Table '{TABLE_ITEMS}' created")
+        cursor.execute(f"SELECT COUNT(*) AS CNTREC FROM pragma_table_info('{TABLE_ITEMS}') WHERE name='patchId'")
+        record = cursor.fetchone()
+        if record[0] == 0:
+            cursor.execute(f"ALTER TABLE {TABLE_ITEMS} ADD patchId TEXT")
+            self._connection.commit()
+            raise Exception(f"Table '{TABLE_ITEMS}' updated. Please run 'get' to complete upgrade.")
 
     def _checkAlbumsTable(self):
         cursor = self._connection.cursor()        
@@ -126,10 +133,11 @@ sync INTEGER NOT NULL)
             total = 0
             skipped = 0
             inserted = 0
+            upgraded = 0
 
             for item in items:
 
-                cursor.execute(f"SELECT * FROM {TABLE_ITEMS} WHERE srcId = ?", (item.SrcId,))
+                cursor.execute(f"SELECT srcId, patchId FROM {TABLE_ITEMS} WHERE srcId = ?", (item.SrcId,))
                 found = cursor.fetchone()
                 if found is None:
 
@@ -146,9 +154,13 @@ sync INTEGER NOT NULL)
                         else:
                             checkFilename = False
 
-                    cursor.execute(f"INSERT INTO {TABLE_ITEMS} (srcId, filename, sync) VALUES (?, ?, ?)", (item.SrcId, item.Filename, 0,))
+                    cursor.execute(f"INSERT INTO {TABLE_ITEMS} (srcId, filename, patchId, sync) VALUES (?, ?, ?, ?)", (item.SrcId, item.Filename, item.PatchId, 0,))
                     inserted += 1
                 else:
+                    if found[1] is None:
+                        upgraded += 1
+                        cursor.execute(f"UPDATE {TABLE_ITEMS} SET patchId = ? WHERE srcId = ?", (item.PatchId, item.SrcId, ))
+
                     skipped += 1
 
                 total += 1
@@ -156,7 +168,9 @@ sync INTEGER NOT NULL)
                     Log.Write(f"{total} records processed")
 
             self._connection.commit()
-            Log.Write(f"{total} records processed, {skipped} skipped, {inserted} inserted into '{TABLE_ITEMS}'")
+            
+            upgraded_info = (f", {upgraded} upgraded") if upgraded > 0 else ""
+            Log.Write(f"{total} records processed, {skipped} skipped, {inserted} inserted{upgraded_info} into '{TABLE_ITEMS}'")
         
         except Exception as err:
             self._connection.rollback()

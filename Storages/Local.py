@@ -45,7 +45,7 @@ class Local:
 
     @staticmethod
     def _getSeconds(dt):
-        return (dt-datetime(1970,1,1)).total_seconds()
+        return int((dt-datetime(1970,1,1)).total_seconds())
 
     @staticmethod
     def _getItems(root, subDirs, items, start, end):
