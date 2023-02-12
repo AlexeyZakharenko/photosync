@@ -71,7 +71,7 @@ class YaDisk:
         subDir = YaDisk.join(*subDirs)
 
         startDir = YaDisk.join(self._rootdir, subDir)
-        list = self._service.listdir(startDir)
+        list = self._service.listdir(startDir, timeout=None)
 
         dirs = []
 
@@ -89,6 +89,8 @@ class YaDisk:
                     itemId = YaDisk.join(subDir, entry['name']) if len(subDir) > 0 else entry['name']
                     item = Item.Item(itemId, entry['name'], sha256=entry['sha256'])
                     items.append(item)
+                    if len(items) % 100 == 0:
+                        Log.Write(f"Scan info for {len(items)} items")
                 
                 # Это корень, не альбом
                 if albumTitle is None:
@@ -185,7 +187,7 @@ class YaDisk:
     def PutItemToAlbum(self, item, album):
         self._connect()
         try:
-            self._service.copy(item.DstId, YaDisk.join(album.DstId, item.Filename), overwrite=True)
+            self._service.copy(item.DstId, YaDisk.join(album.DstId, item.Filename), overwrite=True, timeout=None)
             Log.Write(f"Put item '{item.Filename}' into album '{album.Title}' ({item.DstId} -> {album.DstId})")
 
         except Exception as err:
