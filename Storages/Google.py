@@ -257,6 +257,19 @@ class Google:
         
         return (items, albums)
 
+    def CheckItem(self, item, type='dst'):
+        self._connect()
+        id = item.DstId if type == 'dst' else item.SrcId; 
+        try:
+            itemInfo = self._service.mediaItems().get(mediaItemId = id).execute()
+        except HttpError as err:
+            if err.status_code == 429:
+                raise Exception("Quota exceeded for Google service")
+            Log.Write(f"Missed item '{item.Filename} ({id})")
+            return False
+
+        return True
+
     def GetItem(self, item, cache):
         self._connect()
         try:

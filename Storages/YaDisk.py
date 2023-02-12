@@ -118,11 +118,21 @@ class YaDisk:
         self._getInfo([], None, albums, items, start=None, end=None, scope='all', excludeAlbums=None)
         return (items, albums)
 
+    def CheckItem(self, item, type='dst'):
+        self._connect()
+        id = item.DstId if type == 'dst' else item.SrcId; 
+        entryPath = YaDisk.join(self._rootdir, id)
+        try:
+            info = self._service.get_meta(entryPath)
+        except Exception as err:
+            Log.Write(f"Missed item '{id}'")
+            return False
+        return True
+
     def GetItem(self, item, cache):
         self._connect()
         entryPath = YaDisk.join(self._rootdir, item.SrcId)
         try:
-
             self._service.download(entryPath, cache.GetFilename(item.SrcId), timeout=None)
             info = self._service.get_meta(entryPath)
             item.Type = info['media_type']
@@ -136,7 +146,7 @@ class YaDisk:
             Log.Write(f"Got item '{item.Filename}' {item.Size}b ({item.SrcId})")
 
         except Exception as err:
-            Log.Write(f"ERROR Can't get item '{item.SrcId}' from Local: {err}")
+            Log.Write(f"ERROR Can't get item '{item.SrcId}' from YaDisk: {err}")
             cache.Remove(item.SrcId)
             return False
 

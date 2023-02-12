@@ -141,6 +141,15 @@ sync INTEGER NOT NULL)
                 found = cursor.fetchone()
                 if found is None:
 
+
+                    # check patchId    
+                    cursor.execute(f"SELECT filename, srcId FROM {TABLE_ITEMS} WHERE patchId == ? COLLATE NOCASE", (item.PatchId,))
+                    foundPatchId = cursor.fetchone()
+                    if not foundPatchId is None:
+                        Log.Write(f"WARNING: Same patchId for item {item.Filename} -> {foundPatchId[0]},  {item.SrcId} -> {foundPatchId[1]}")
+                        continue
+
+
                     # generate unique file name
                     (name, ext) = path.splitext(item.Filename)
                     n = 0
