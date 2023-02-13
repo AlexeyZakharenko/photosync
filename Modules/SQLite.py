@@ -166,7 +166,7 @@ sync INTEGER NOT NULL)
                     cursor.execute(f"INSERT INTO {TABLE_ITEMS} (srcId, filename, patchId, sync) VALUES (?, ?, ?, ?)", (item.SrcId, item.Filename, item.PatchId, 0,))
                     inserted += 1
                 else:
-                    if found[1] is None:
+                    if found[1] is None and not item.PatchId is None :
                         upgraded += 1
                         cursor.execute(f"UPDATE {TABLE_ITEMS} SET patchId = ? WHERE srcId = ?", (item.PatchId, item.SrcId, ))
 
