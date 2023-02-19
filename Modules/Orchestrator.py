@@ -24,9 +24,6 @@ def GetSource(type, privateDir, rootDir):
 
 class Orchestrator:
 
-    _commands = {
-
-    }
 
     def Invoke(self, command):
         if command == 'status':
@@ -57,6 +54,7 @@ class Orchestrator:
         self._scope = scope
         self._excludeAlbums = excludeAlbums
         self._fix = fix
+
 
     def __del__(self):
         del self._db
@@ -167,19 +165,19 @@ class Orchestrator:
 
     def _invokeCheck(self):
 
-        if input(f"Are You sure to fix data at '{self._db.GetDBFile()}' (please run first time without '--fix' flag)? (Yes/No) ") != 'Yes':
+        if self._fix and input(f"Are You sure to fix data at '{self._db.GetDBFile()}' (please run first time without '--fix' flag)? (Yes/No) ") != 'Yes':
             return True
 
         if self._scope == 'all' or self._scope == 'items':
-            self._checkItems()
+            self._checkItems(self._fix)
         if self._scope == 'all' or self._scope == 'albums':
-            self._checkLinks()
+            self._checkAlbums(self._fix)
         if self._scope == 'all' or self._scope == 'links':
-            self._checkLinks()
+            self._checkLinks(self._fix)
 
         return True
 
-    def _checkItems(self):
+    def _checkItems(self, fix=False):
         items = self._db.GetItemsForCheck()
         Log.Write(f"Checking items for {self._dst.GetType()}...")
         if len(items) > 0:
@@ -194,21 +192,25 @@ class Orchestrator:
                     correct += 1
                 if exists and item.Sync == 0:
                     restored += 1
+                    if fix:
+                        self._db.MarkAlbumSync(item, 1)
                 if not exists and item.Sync != 0:
                     missed += 1
+                    if fix:
+                        self._db.MarkAlbumSync(item, 0)
 
             Log.Write(f"Check {len(items)} items from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
 
         return
 
-    def _checkAlbums(self):
+    def _checkAlbums(self, fix=False):
         albums = self._db.GetAlbumsForCheck()
-        Log.Write(f"Checking items for {self._dst.GetType()}...")
+        Log.Write(f"Checking albums for {self._dst.GetType()}...")
         if len(albums) > 0:
             correct = 0 
             missed = 0
             restored = 0
-            for album in album:
+            for album in albums:
                 exists = self._dst.CheckAlbum(album)
                 if exists and album.Sync != 0:
                     correct += 1
@@ -216,13 +218,39 @@ class Orchestrator:
                     correct += 1
                 if exists and album.Sync == 0:
                     restored += 1
+                    if fix:
+                        self._db.MarkAlbumSync(album, 1)
                 if not exists and album.Sync != 0:
                     missed += 1
+                    if fix:
+                        self._db.MarkAlbumSync(album, 0)
 
             Log.Write(f"Check {len(albums)} albums from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
         
         return
 
-    def _checkLinks(self):
+    def _checkLinks(self, fix=False):
+        links = self._db.GetLinksForCheck()
+        Log.Write(f"Checking links for {self._dst.GetType()}...")
+        if len(links) > 0:
+            correct = 0 
+            missed = 0
+            restored = 0
+            for link in links:
+                exists = self._dst.CheckLink(link)
+                if exists and link.Sync != 0:
+                    correct += 1
+                if not exists and link.Sync == 0:
+                    correct += 1
+                if exists and link.Sync == 0:
+                    restored += 1
+                    if fix:
+                        self._db.MarkLinkSync(link, 1)
+                if not exists and link.Sync != 0:
+                    missed += 1
+                    if fix:
+                        self._db.MarkLinkSync(link, 0)
+
+            Log.Write(f"Check {len(links)} links from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
         
         return

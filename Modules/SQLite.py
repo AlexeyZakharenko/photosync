@@ -331,6 +331,24 @@ sync INTEGER NOT NULL)
         
         return result
 
+    def GetLinksForCheck(self):
+        self._connect()
+        result = []
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(f"SELECT albumId, itemId, sync FROM {TABLE_LINKS}")
+            records = cursor.fetchall()
+            if not records is None:
+                for record in records:
+                    result.append(Link.Link(albumId=record[0], itemId=record[1], sync=record[2]))
+
+            Log.Write(f"Got {len(result)} links to check")
+        
+        except Exception as err:
+            Log.Write(f"ERROR Can't get records: {err}")
+        
+        return result
+
     def GetAlbum(self, albumId):
         self._connect()
         try:
