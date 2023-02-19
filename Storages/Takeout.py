@@ -95,6 +95,16 @@ class Takeout:
 
         return (items, albums)
 
+    def CheckItem(self, item, type='dst'):
+        id = item.DstId if type == 'dst' else item.SrcId; 
+        entryPath = path.join(self._rootdir, id)
+
+        if not path.exists(entryPath):
+            Log.Write(f"Missed item '{item.Filename} ({id})")
+            return False
+
+        return True
+
     def GetItem(self, item, cache):
         entryPath = path.join(self._rootdir, item.SrcId)
         try:

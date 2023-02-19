@@ -71,7 +71,7 @@ class YaDisk:
         subDir = YaDisk.join(*subDirs)
 
         startDir = YaDisk.join(self._rootdir, subDir)
-        list = self._service.listdir(startDir)
+        list = self._service.listdir(startDir, timeout=None)
 
         dirs = []
 
@@ -89,6 +89,8 @@ class YaDisk:
                     itemId = YaDisk.join(subDir, entry['name']) if len(subDir) > 0 else entry['name']
                     item = Item.Item(itemId, entry['name'], sha256=entry['sha256'])
                     items.append(item)
+                    if len(items) % 100 == 0:
+                        Log.Write(f"Scan info for {len(items)} items")
                 
                 # Это корень, не альбом
                 if albumTitle is None:
@@ -116,11 +118,21 @@ class YaDisk:
         self._getInfo([], None, albums, items, start=None, end=None, scope='all', excludeAlbums=None)
         return (items, albums)
 
+    def CheckItem(self, item, type='dst'):
+        self._connect()
+        id = item.DstId if type == 'dst' else item.SrcId; 
+        entryPath = YaDisk.join(self._rootdir, id)
+        try:
+            info = self._service.get_meta(entryPath)
+        except Exception as err:
+            Log.Write(f"Missed item '{id}'")
+            return False
+        return True
+
     def GetItem(self, item, cache):
         self._connect()
         entryPath = YaDisk.join(self._rootdir, item.SrcId)
         try:
-
             self._service.download(entryPath, cache.GetFilename(item.SrcId), timeout=None)
             info = self._service.get_meta(entryPath)
             item.Type = info['media_type']
@@ -134,7 +146,7 @@ class YaDisk:
             Log.Write(f"Got item '{item.Filename}' {item.Size}b ({item.SrcId})")
 
         except Exception as err:
-            Log.Write(f"ERROR Can't get item '{item.SrcId}' from Local: {err}")
+            Log.Write(f"ERROR Can't get item '{item.SrcId}' from YaDisk: {err}")
             cache.Remove(item.SrcId)
             return False
 
@@ -144,14 +156,16 @@ class YaDisk:
     def PutItem(self, item, cache):
         self._connect()
         try:
-            dstId = YaDisk.join(self._rootdir,item.Filename)
-            self._service.upload(cache.GetFilename(item.SrcId), dstId, headers={
+            dstId = item.Filename
+            itemPath = YaDisk.join(self._rootdir,item.Filename)
+
+            self._service.upload(cache.GetFilename(item.SrcId), itemPath, headers={
                 "media_type": item.Type, 
                 "created" : item.Created.isoformat()
             }, overwrite=True, timeout=None)
 
             item.DstId = dstId
-            Log.Write(f"Put item '{item.Filename}' ({item.DstId})")
+            Log.Write(f"Put item '{item.Filename}' ({itemPath})")
 
         except Exception as err:
             Log.Write(f"ERROR Can't put item '{item.Filename}' to YaDisk: {err}")
@@ -165,16 +179,18 @@ class YaDisk:
     def PutAlbum(self, album):
         self._connect()
         try:
-            dstId = YaDisk.join(self._rootdir,album.Title)
-            if self._service.exists(dstId):
+            dstId = album.Title
+            albumPath = YaDisk.join(self._rootdir,album.Title)
+            if self._service.exists(albumPath):
                 album.DstId = dstId;
-                Log.Write(f"Album '{album.Title}' already exists({album.DstId})")
+                Log.Write(f"Album '{album.Title}' already exists({albumPath})")
                 return True
 
-            self._service.mkdir(dstId)
+            self._service.mkdir(albumPath)
+
             album.DstId = dstId
 
-            Log.Write(f"Put album '{album.Title}' ({album.DstId})")
+            Log.Write(f"Put album '{album.Title}' ({albumPath})")
 
         except Exception as err:
             Log.Write(f"ERROR Can't put album '{album.Title}' to YaDisk: {err}")
@@ -185,8 +201,12 @@ class YaDisk:
     def PutItemToAlbum(self, item, album):
         self._connect()
         try:
-            self._service.copy(item.DstId, YaDisk.join(album.DstId, item.Filename), overwrite=True)
-            Log.Write(f"Put item '{item.Filename}' into album '{album.Title}' ({item.DstId} -> {album.DstId})")
+            
+            itemPath = YaDisk.join(self._rootdir,item.DstId)
+            albumPath = YaDisk.join(self._rootdir,album.DstId)
+
+            self._service.copy(itemPath, YaDisk.join(albumPath, item.Filename), overwrite=True, timeout=None)
+            Log.Write(f"Put item '{item.Filename}' into album '{album.Title}' ({itemPath} -> {albumPath})")
 
         except Exception as err:
             Log.Write(f"ERROR Can't put item '{item.Filename}' into album '{album.Title}' to YaDisk: {err}")

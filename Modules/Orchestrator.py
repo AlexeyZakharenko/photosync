@@ -22,7 +22,6 @@ def GetSource(type, privateDir, rootDir):
         return Native.Native(rootDir)
     raise Exception(f"Unsupported storage type '{type}'")
 
-
 class Orchestrator:
 
     def Invoke(self, command):
@@ -38,6 +37,10 @@ class Orchestrator:
             return self._invokePut()
         if command == 'sync':
             return self._invokeSync()
+        if command == 'check':
+            return self._invokeCheck()
+        if command == 'dump':
+            return self._invokeDump()
         return False
 
     def __init__(self, db, cache, src, dst, start, end, scope, excludeAlbums):
@@ -78,7 +81,11 @@ class Orchestrator:
         Log.Write(f"Source: {self._src.GetType()}, destination: {self._dst.GetType()}")
         self._db.GetStatus()
         return True
-   
+
+    def _invokeDump(self):
+        self._db.Dump()
+        return True
+
     def _invokeGet(self):
         start = f" from {self._start.date()}" if self._start != None else ""
         end = f" to {self._end.date()}" if self._end != None else ""
@@ -146,7 +153,6 @@ class Orchestrator:
     def _invokePut(self):
 
         Log.Write(f"Putting data from {self._src.GetType()} to {self._dst.GetType()}...")
-
         if self._scope == 'all' or self._scope == 'items':
             self._putItems()
         if self._scope == 'all' or self._scope == 'albums':
@@ -154,5 +160,30 @@ class Orchestrator:
 
         return True
 
+    def _invokeCheck(self):
+        if self._scope == 'all' or self._scope == 'items':
+            self._checkItems()
+        if self._scope == 'all' or self._scope == 'albums':
+            self._checkLinks()
 
+        return True
 
+    def _checkItems(self):
+        items = self._db.GetItemsForCheck()
+        Log.Write(f"Checking items for {self._dst.GetType()}...")
+        if len(items) > 0:
+            exists = 0 
+            missed = 0
+            for item in items:
+                if self._dst.CheckItem(item):
+                    exists += 1
+                else:
+                    missed += 1
+
+            Log.Write(f"Check {len(items)} items from {self._src.GetType()}, {exists} items exist, {missed} items missed")
+
+        return
+
+    def _checkLinks(self):
+        
+        return
