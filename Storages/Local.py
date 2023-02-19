@@ -127,10 +127,10 @@ class Local:
 
     def CheckItem(self, item, type='dst'):
         id = item.DstId if type == 'dst' else item.SrcId; 
-        entryPath = path.join(self._rootdir, id)
+        itemPath = path.join(self._photosdir, id)
 
-        if not path.exists(entryPath):
-            Log.Write(f"Missed item '{item.Filename} ({id})")
+        if not path.exists(itemPath):
+            Log.Write(f"Missed item '{item.Filename}' ({id} {item.SrcId} {item.DstId})")
             return False
 
         return True
@@ -165,15 +165,16 @@ class Local:
 
             created = Local._getSeconds(item.Created)
             
-            dstPath = path.join(self._photosdir,item.Created.strftime("%Y"),item.Created.strftime("%m"))
-            if not path.isdir(dstPath):
-                Path(dstPath).mkdir(parents=True, exist_ok=True)
+            dstPath = path.join(item.Created.strftime("%Y"),item.Created.strftime("%m"))
+            itemPath = path.join(self._photosdir,dstPath)
+            if not path.isdir(itemPath):
+                Path(itemPath).mkdir(parents=True, exist_ok=True)
 
             item.DstId = path.join(dstPath,item.Filename);
-
-            open(item.DstId, 'wb').write(cache.Get(item.SrcId))
-            utime(item.DstId, (created, created))
-            Log.Write(f"Put item '{item.Filename}' ({item.DstId})")
+            itemPath = path.join(self._photosdir,item.DstId)
+            open(itemPath, 'wb').write(cache.Get(item.SrcId))
+            utime(itemPath, (created, created))
+            Log.Write(f"Put item '{item.Filename}' ({itemPath})")
 
         except Exception as err:
             Log.Write(f"ERROR Can't put item '{item.Filename}' to Local: {err}")
@@ -187,9 +188,13 @@ class Local:
     def PutAlbum(self, album):
         
         try:
-            album.DstId = path.join(self._albumssdir,album.Title)
-            mkdir(album.DstId)
-            Log.Write(f"Put album '{album.Title}' ({album.DstId})")
+
+            album.DstId = album.Title
+            albumPath = path.join(self._albumssdir, album.DstId)
+            if not path.isdir(albumPath):
+                Path(albumPath).mkdir(parents=True, exist_ok=True)
+                
+            Log.Write(f"Put album '{album.Title}' ({albumPath})")
 
         except Exception as err:
             Log.Write(f"ERROR Can't put album '{album.Title}' to Local: {err}")
@@ -200,18 +205,21 @@ class Local:
     def PutItemToAlbum(self, item, album):
 
         try:
-            if not path.exists(item.DstId):
+
+            itemPath = path.join(self._photosdir,item.DstId)
+            albumPath = path.join(self._albumssdir,album.DstId)
+            if not path.exists(itemPath):
                 nonExists = item.DstId
                 item.DstId = None
                 raise Exception(f"Item '{nonExists}' not found")
-            if not path.exists(album.DstId):
+            if not path.exists(albumPath):
                 nonExists = album.DstId
-                item.DstId = None
+                album.DstId = None
                 raise Exception(f"Album '{nonExists}' not found")
                 
-            targetPath = path.join(album.DstId,path.split(item.DstId)[-1])
+            targetPath = path.join(albumPath,path.split(item.DstId)[-1])
 
-            link(item.DstId, targetPath)
+            link(itemPath, targetPath)
             Log.Write(f"Put item '{item.DstId}' into album '{album.DstId}' ({targetPath})")
 
         except Exception as err:

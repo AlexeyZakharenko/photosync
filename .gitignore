@@ -143,8 +143,8 @@ Blog
 About
 
 .vscode
-*.db
-cache
-private
-photos
+/cache
+/private
+/photos
+/db
 *.session.sql

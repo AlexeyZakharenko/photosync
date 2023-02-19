@@ -29,7 +29,7 @@ try:
     
     parser.add_argument('command', 
         nargs='?', 
-        choices=['status', 'clean', 'put', 'get', 'sync', 'reset'], 
+        choices=['status', 'clean', 'put', 'get', 'sync', 'check', 'reset', 'dump'], 
         type=str, 
         help="Available commands.")
 
@@ -47,7 +47,7 @@ try:
 
     parser.add_argument('--scope', 
         type=str, 
-        choices=['all','items', 'albums'], 
+        choices=['all','items', 'albums', 'links'], 
         default=Default.Scope, 
         help=f"Scope of sync. By default '{Default.Scope}'.")
 

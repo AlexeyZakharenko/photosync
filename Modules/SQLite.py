@@ -105,6 +105,28 @@ sync INTEGER NOT NULL)
             self._connection.commit()
             Log.Write(f"Table '{table}' deleted")
 
+    def Dump(self, scope='all'):
+        if scope == 'all' or scope =='items':
+            self._dumpTable(TABLE_ITEMS)
+        if scope == 'all' or scope =='albums':
+            self._dumpTable(TABLE_ALBUMS)
+        if scope == 'all' or scope =='links':
+            self._dumpTable(TABLE_LINKS)
+
+    def _dumpTable(self,table):
+        self._connect()
+        jsonFile = f"{self._filename}-{table}.json"
+        cursor = self._connection.cursor()   
+        cursor.execute(f"SELECT * FROM {table}")
+        try:
+            with open(jsonFile, mode='wt', encoding='utf-8') as json_data:
+                print(cursor.fetchall(), file=json_data)
+
+            Log.Write(f"Table '{table}' from '{self._filename}' dumped to '{jsonFile}'")
+
+        except Exception as e:
+            Log.Write(f"ERROR Can't dump table '{table}' from '{self._filename}' to '{jsonFile}': {e}")
+
     def GetStatus(self):
         self._connect()
         cursor = self._connection.cursor()  
@@ -267,6 +289,24 @@ sync INTEGER NOT NULL)
                     result.append(Link.Link(record[0],record[1]))
 
             Log.Write(f"Got {len(result)} links to sync")
+        
+        except Exception as err:
+            Log.Write(f"ERROR Can't get records: {err}")
+        
+        return result
+
+    def GetItemsForCheck(self):
+        self._connect()
+        result = []
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(f"SELECT srcId, dstId, filename FROM {TABLE_ITEMS} WHERE sync > ?", (0,))
+            records = cursor.fetchall()
+            if not records is None:
+                for record in records:
+                    result.append(Item.Item(srcId=record[0], dstId=record[1], filename=record[2]))
+
+            Log.Write(f"Got {len(result)} items to check")
         
         except Exception as err:
             Log.Write(f"ERROR Can't get records: {err}")
