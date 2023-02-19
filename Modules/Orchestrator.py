@@ -24,6 +24,10 @@ def GetSource(type, privateDir, rootDir):
 
 class Orchestrator:
 
+    _commands = {
+
+    }
+
     def Invoke(self, command):
         if command == 'status':
             return self._invokeStatus()
@@ -43,7 +47,7 @@ class Orchestrator:
             return self._invokeDump()
         return False
 
-    def __init__(self, db, cache, src, dst, start, end, scope, excludeAlbums):
+    def __init__(self, db, cache, src, dst, start, end, scope, excludeAlbums, fix):
         self._db = db
         self._cache = cache
         self._src = src
@@ -52,6 +56,7 @@ class Orchestrator:
         self._end = end
         self._scope = scope
         self._excludeAlbums = excludeAlbums
+        self._fix = fix
 
     def __del__(self):
         del self._db
@@ -161,6 +166,10 @@ class Orchestrator:
         return True
 
     def _invokeCheck(self):
+
+        if input(f"Are You sure to fix data at '{self._db.GetDBFile()}' (please run first time without '--fix' flag)? (Yes/No) ") != 'Yes':
+            return True
+
         if self._scope == 'all' or self._scope == 'items':
             self._checkItems()
         if self._scope == 'all' or self._scope == 'albums':

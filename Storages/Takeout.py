@@ -35,7 +35,7 @@ class Takeout:
             subDir = path.join(subDir, s)
         startDir = path.join(self._rootdir, subDir)
         for entry in listdir(startDir):
-            if entry.startswith('.'):
+            if entry.startswith('.') or entry.startswith('@'):
                 continue
             entryPath = path.join(startDir, entry)
             if path.isdir(entryPath):

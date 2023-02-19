@@ -97,6 +97,10 @@ try:
         type=str, 
         help="List of albums to exclude. Can be file like albums.txt (album title per line, utf-8) or list of album titles divided by comma. By default None.")
 
+    parser.add_argument('--fix',
+        action="store_true",
+        help=f"Fix something depends on command. By default absent.")
+
     parameters = parser.parse_args (sys.argv[1:])
 
     def isStr(s):
@@ -118,7 +122,8 @@ try:
         start = (datetime.today()-timedelta(days=parameters.fromdays)) if parameters.fromdays != None else parameters.start,
         end = parameters.end,
         scope = parameters.scope,
-        excludeAlbums=albums
+        excludeAlbums=albums,
+        fix = parameters.fix
     )
 
     if not orchestrator.Invoke(parameters.command):
