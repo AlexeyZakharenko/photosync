@@ -118,9 +118,26 @@ class Orchestrator:
 
             Log.Write(f"Put {n} of {len(items)} items from {self._src.GetType()} to {self._dst.GetType()}, {len(items)-n} items skipped")
 
+    def _putAlbums(self):
+        albums = self._db.GetAlbumsForSync()
+        Log.Write(f"Putting albums from {self._src.GetType()} to {self._dst.GetType()}...")
+        if len(albums) > 0:
+            n = 0 
+            for album in albums:
+                if album is None:
+                    continue
+                if album.DstId is None or album.Sync == 0:
+                    if self._dst.PutAlbum(album) and self._db.MarkAlbumSync(album):
+                        n += 1
+                    else:
+                        continue
+
+            Log.Write(f"Put {n} of {len(albums)} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(albums)-n} albums skipped")
+
+
     def _putLinks(self):
         links = self._db.GetLinksForSync()
-        Log.Write(f"Putting albums from {self._src.GetType()} to {self._dst.GetType()}...")
+        Log.Write(f"Putting links from {self._src.GetType()} to {self._dst.GetType()}...")
         if len(links) > 0:
             n = 0 
             nAlbums = 0
@@ -153,12 +170,15 @@ class Orchestrator:
 
             Log.Write(f"Put {n} of {len(links)} links and {nAlbums} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(links)-n} links skipped")
 
+
     def _invokePut(self):
 
         Log.Write(f"Putting data from {self._src.GetType()} to {self._dst.GetType()}...")
         if self._scope == 'all' or self._scope == 'items':
             self._putItems()
         if self._scope == 'all' or self._scope == 'albums':
+            self._putAlbums()
+        if self._scope == 'all' or self._scope == 'links':
             self._putLinks()
 
         return True
@@ -237,7 +257,10 @@ class Orchestrator:
             missed = 0
             restored = 0
             for link in links:
-                exists = self._dst.CheckLink(link)
+                album = self._db.GetAlbum(link.AlbumId)
+                item = self._db.GetItem(link.ItemId)
+
+                exists = self._dst.CheckLink(item, album, link)
                 if exists and link.Sync != 0:
                     correct += 1
                 if not exists and link.Sync == 0:

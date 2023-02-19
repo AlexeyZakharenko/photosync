@@ -313,6 +313,24 @@ sync INTEGER NOT NULL)
         
         return result
 
+    def GetAlbumsForSync(self):
+        self._connect()
+        result = []
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(f"SELECT srcId, dstId, title, sync FROM {TABLE_ALBUMS} WHERE sync = ?", (0,))
+            records = cursor.fetchall()
+            if not records is None:
+                for record in records:
+                    result.append(Album.Album(srcId=record[0], dstId=record[1], title=record[2], sync=record[3]))
+
+            Log.Write(f"Got {len(result)} albums to check")
+        
+        except Exception as err:
+            Log.Write(f"ERROR Can't get records: {err}")
+        
+        return result
+
     def GetAlbumsForCheck(self):
         self._connect()
         result = []
@@ -358,7 +376,7 @@ sync INTEGER NOT NULL)
             if record is None:
                 raise Exception(f"Not found")
 
-            return Album.Album(albumId, record[0], record[1] if record[2] != 0 else None)        
+            return Album.Album(albumId, record[0], record[1] if record[2] != 0 else None, record[2])        
         
         except Exception as err:
             Log.Write(f"ERROR Can't get album '{albumId}' from table: {err}")

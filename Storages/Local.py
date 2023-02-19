@@ -155,13 +155,17 @@ class Local:
 
         return True
 
-    def CheckLink(self, link, type='dst'):
+    def CheckLink(self, item, album, link, type='dst'):
 
-        album = self.GetAlbum(link.AlbumId)
-        item = self.GetItem(link.ItemId)
 
         albumId = album.DstId if type == 'dst' else album.SrcId; 
         itemId = item.DstId if type == 'dst' else item.SrcId; 
+        if albumId is None:
+            Log.Write(f"Missed album for link '{album.Title} -> {item.Filename}'")
+            return False
+        if itemId is None:
+            Log.Write(f"Missed item for link '{album.Title} -> {item.Filename}'")
+            return False
 
         albumPath = path.join(self._albumssdir,albumId)
 
@@ -169,7 +173,7 @@ class Local:
 
         if not path.exists(targetPath) :
             if link.Sync != 0:
-                Log.Write(f"Missed link '{album.Title} -> {item.Filename}' ({id} {albumId} -> {itemId})")
+                Log.Write(f"Missed link '{album.Title} -> {item.Filename}' ({albumId} -> {itemId})")
             return False
 
         if path.exists(targetPath) and link.Sync == 0:
