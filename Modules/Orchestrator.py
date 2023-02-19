@@ -165,6 +165,8 @@ class Orchestrator:
             self._checkItems()
         if self._scope == 'all' or self._scope == 'albums':
             self._checkLinks()
+        if self._scope == 'all' or self._scope == 'links':
+            self._checkLinks()
 
         return True
 
@@ -172,16 +174,44 @@ class Orchestrator:
         items = self._db.GetItemsForCheck()
         Log.Write(f"Checking items for {self._dst.GetType()}...")
         if len(items) > 0:
-            exists = 0 
+            correct = 0 
             missed = 0
+            restored = 0
             for item in items:
-                if self._dst.CheckItem(item):
-                    exists += 1
-                else:
+                exists = self._dst.CheckItem(item)
+                if exists and item.Sync != 0:
+                    correct += 1
+                if not exists and item.Sync == 0:
+                    correct += 1
+                if exists and item.Sync == 0:
+                    restored += 1
+                if not exists and item.Sync != 0:
                     missed += 1
 
-            Log.Write(f"Check {len(items)} items from {self._src.GetType()}, {exists} items exist, {missed} items missed")
+            Log.Write(f"Check {len(items)} items from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
 
+        return
+
+    def _checkAlbums(self):
+        albums = self._db.GetAlbumsForCheck()
+        Log.Write(f"Checking items for {self._dst.GetType()}...")
+        if len(albums) > 0:
+            correct = 0 
+            missed = 0
+            restored = 0
+            for album in album:
+                exists = self._dst.CheckAlbum(album)
+                if exists and album.Sync != 0:
+                    correct += 1
+                if not exists and album.Sync == 0:
+                    correct += 1
+                if exists and album.Sync == 0:
+                    restored += 1
+                if not exists and album.Sync != 0:
+                    missed += 1
+
+            Log.Write(f"Check {len(albums)} albums from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
+        
         return
 
     def _checkLinks(self):

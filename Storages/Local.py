@@ -128,10 +128,30 @@ class Local:
     def CheckItem(self, item, type='dst'):
         id = item.DstId if type == 'dst' else item.SrcId; 
         itemPath = path.join(self._photosdir, id)
-
+        
         if not path.exists(itemPath):
-            Log.Write(f"Missed item '{item.Filename}' ({id} {item.SrcId} {item.DstId})")
+            if item.Sync != 0:
+                Log.Write(f"Missed item '{item.Filename}' ({id} {item.SrcId} {item.DstId})")
             return False
+
+        if path.exists(itemPath) and item.Sync == 0:
+            Log.Write(f"Unexpected exists item '{item.Filename}' ({id} {item.SrcId} {item.DstId})")
+            return True
+
+        return True
+
+    def CheckAlbum(self, album, type='dst'):
+        id = album.DstId if type == 'dst' else album.SrcId; 
+        albumPath = path.join(self._albumssdir, id)
+
+        if not path.exists(albumPath) :
+            if album.Sync != 0:
+                Log.Write(f"Missed album '{album.Title}' ({id} {album.SrcId} {album.DstId})")
+            return False
+
+        if path.exists(albumPath) and album.Sync == 0:
+            Log.Write(f"Unexpected exists album '{album.Title}' ({id} {album.SrcId} {album.DstId})")
+            return True
 
         return True
 
