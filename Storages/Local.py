@@ -127,11 +127,62 @@ class Local:
 
     def CheckItem(self, item, type='dst'):
         id = item.DstId if type == 'dst' else item.SrcId; 
+        if id is None:
+            Log.Write(f"Item '{item.Filename}' with empty {type} id ({item.SrcId} {item.DstId})")
+            return False
+
         itemPath = path.join(self._photosdir, id)
 
         if not path.exists(itemPath):
-            Log.Write(f"Missed item '{item.Filename}' ({id} {item.SrcId} {item.DstId})")
+            if item.Sync != 0:
+                Log.Write(f"Missed item '{item.Filename}' ({id} {item.SrcId} {item.DstId})")
             return False
+
+        if path.exists(itemPath) and item.Sync == 0:
+            Log.Write(f"Unexpected exists item '{item.Filename}' ({id} {item.SrcId} {item.DstId})")
+            return True
+
+        return True
+
+    def CheckAlbum(self, album, type='dst'):
+        id = album.DstId if type == 'dst' else album.SrcId; 
+        albumPath = path.join(self._albumssdir, id)
+
+        if not path.exists(albumPath) :
+            if album.Sync != 0:
+                Log.Write(f"Missed album '{album.Title}' ({id} {album.SrcId} {album.DstId})")
+            return False
+
+        if path.exists(albumPath) and album.Sync == 0:
+            Log.Write(f"Unexpected exists album '{album.Title}' ({id} {album.SrcId} {album.DstId})")
+            return True
+
+        return True
+
+    def CheckLink(self, item, album, link, type='dst'):
+
+
+        albumId = album.DstId if type == 'dst' else album.SrcId; 
+        itemId = item.DstId if type == 'dst' else item.SrcId; 
+        if albumId is None:
+            Log.Write(f"Missed album for link '{album.Title} -> {item.Filename}'")
+            return False
+        if itemId is None:
+            Log.Write(f"Missed item for link '{album.Title} -> {item.Filename}'")
+            return False
+
+        albumPath = path.join(self._albumssdir,albumId)
+
+        targetPath = path.join(albumPath,path.split(itemId)[-1])
+
+        if not path.exists(targetPath) :
+            if link.Sync != 0:
+                Log.Write(f"Missed link '{album.Title} -> {item.Filename}' ({albumId} -> {itemId})")
+            return False
+
+        if path.exists(targetPath) and link.Sync == 0:
+            Log.Write(f"Unexpected exists link '{album.Title} -> {item.Filename}' ({albumId} -> {itemId})")
+            return True
 
         return True
 
@@ -205,7 +256,6 @@ class Local:
     def PutItemToAlbum(self, item, album):
 
         try:
-
             itemPath = path.join(self._photosdir,item.DstId)
             albumPath = path.join(self._albumssdir,album.DstId)
             if not path.exists(itemPath):

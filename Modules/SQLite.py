@@ -264,11 +264,11 @@ sync INTEGER NOT NULL)
         result = []
         try:
             cursor = self._connection.cursor()
-            cursor.execute(f"SELECT srcId, filename FROM {TABLE_ITEMS} WHERE sync = ?", (0,))
+            cursor.execute(f"SELECT srcId, filename, dstId, sync FROM {TABLE_ITEMS} WHERE sync = ?", (0,))
             records = cursor.fetchall()
             if not records is None:
                 for record in records:
-                    result.append(Item.Item(record[0],record[1]))
+                    result.append(Item.Item(record[0],record[1],dstId=record[2]))
 
             Log.Write(f"Got {len(result)} items to sync")
         
@@ -300,13 +300,67 @@ sync INTEGER NOT NULL)
         result = []
         try:
             cursor = self._connection.cursor()
-            cursor.execute(f"SELECT srcId, dstId, filename FROM {TABLE_ITEMS} WHERE sync > ?", (0,))
+            cursor.execute(f"SELECT srcId, dstId, filename, sync FROM {TABLE_ITEMS}")
             records = cursor.fetchall()
             if not records is None:
                 for record in records:
-                    result.append(Item.Item(srcId=record[0], dstId=record[1], filename=record[2]))
+                    result.append(Item.Item(srcId=record[0], dstId=record[1], filename=record[2], sync=record[3]))
 
             Log.Write(f"Got {len(result)} items to check")
+        
+        except Exception as err:
+            Log.Write(f"ERROR Can't get records: {err}")
+        
+        return result
+
+    def GetAlbumsForSync(self):
+        self._connect()
+        result = []
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(f"SELECT srcId, dstId, title, sync FROM {TABLE_ALBUMS} WHERE sync = ?", (0,))
+            records = cursor.fetchall()
+            if not records is None:
+                for record in records:
+                    result.append(Album.Album(srcId=record[0], dstId=record[1], title=record[2], sync=record[3]))
+
+            Log.Write(f"Got {len(result)} albums to check")
+        
+        except Exception as err:
+            Log.Write(f"ERROR Can't get records: {err}")
+        
+        return result
+
+    def GetAlbumsForCheck(self):
+        self._connect()
+        result = []
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(f"SELECT srcId, dstId, title, sync FROM {TABLE_ALBUMS}")
+            records = cursor.fetchall()
+            if not records is None:
+                for record in records:
+                    result.append(Album.Album(srcId=record[0], dstId=record[1], title=record[2], sync=record[3]))
+
+            Log.Write(f"Got {len(result)} albums to check")
+        
+        except Exception as err:
+            Log.Write(f"ERROR Can't get records: {err}")
+        
+        return result
+
+    def GetLinksForCheck(self):
+        self._connect()
+        result = []
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(f"SELECT albumId, itemId, sync FROM {TABLE_LINKS}")
+            records = cursor.fetchall()
+            if not records is None:
+                for record in records:
+                    result.append(Link.Link(albumId=record[0], itemId=record[1], sync=record[2]))
+
+            Log.Write(f"Got {len(result)} links to check")
         
         except Exception as err:
             Log.Write(f"ERROR Can't get records: {err}")
@@ -322,7 +376,7 @@ sync INTEGER NOT NULL)
             if record is None:
                 raise Exception(f"Not found")
 
-            return Album.Album(albumId, record[0], record[1] if record[2] != 0 else None)        
+            return Album.Album(albumId, record[0], record[1] if record[2] != 0 else None, record[2])        
         
         except Exception as err:
             Log.Write(f"ERROR Can't get album '{albumId}' from table: {err}")
@@ -353,7 +407,7 @@ sync INTEGER NOT NULL)
             self._connection.commit()
         except Exception as err:
             self._connection.rollback()
-            Log.Write(f"ERROR Can't mark item {item.SrcId} as sync: {err}")
+            Log.Write(f"ERROR Can't set item {item.SrcId} sync to '{sync}': {err}")
             return False
 
         return True
@@ -366,7 +420,7 @@ sync INTEGER NOT NULL)
             self._connection.commit()
         except Exception as err:
             self._connection.rollback()
-            Log.Write(f"ERROR Can't mark album {album.SrcId} as sync: {err}")
+            Log.Write(f"ERROR Can't set album {album.SrcId} sync to '{sync}': {err}")
             return False
         return True
 
@@ -378,7 +432,7 @@ sync INTEGER NOT NULL)
             self._connection.commit()
         except Exception as err:
             self._connection.rollback()
-            Log.Write(f"ERROR Can't mark link {link.AlbumId} - {link.ItemId} as sync: {err}")
+            Log.Write(f"ERROR Can't set link {link.AlbumId} - {link.ItemId} sync to '{sync}': {err}")
             return False
 
         return True
@@ -403,10 +457,10 @@ sync INTEGER NOT NULL)
 
         else:
             if scope == 'all' or scope =='items':
-                cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
+                cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?", (0, ))
                 Log.Write(f"Clean sync flags in table {TABLE_ITEMS}")
             if scope == 'all' or scope =='albums':
-                cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
+                cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?", (0, ))
                 Log.Write(f"Clean sync flags in table {TABLE_ALBUMS}")
                 cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
                 Log.Write(f"Clean sync flags in table {TABLE_LINKS}")

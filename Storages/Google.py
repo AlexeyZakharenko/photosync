@@ -291,7 +291,7 @@ class Google:
             Log.Write(f"Got item '{item.Filename}' {len(request.content)}b ({item.SrcId})")
 
         except HttpError as err:
-            Log.Write(f"ERROR Can't get item '{item.Filename}' from Google: {err}")
+            Log.Write(f"ERROR Can't get item '{item.Filename}' ({item.SrcId} {item.DstId}) from Google: {err}")
             if err.status_code == 429:
                 raise Exception("Quota exceeded for Google service")
             return False

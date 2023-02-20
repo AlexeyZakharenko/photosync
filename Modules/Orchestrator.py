@@ -24,6 +24,7 @@ def GetSource(type, privateDir, rootDir):
 
 class Orchestrator:
 
+
     def Invoke(self, command):
         if command == 'status':
             return self._invokeStatus()
@@ -43,7 +44,7 @@ class Orchestrator:
             return self._invokeDump()
         return False
 
-    def __init__(self, db, cache, src, dst, start, end, scope, excludeAlbums):
+    def __init__(self, db, cache, src, dst, start, end, scope, excludeAlbums, fix):
         self._db = db
         self._cache = cache
         self._src = src
@@ -52,6 +53,8 @@ class Orchestrator:
         self._end = end
         self._scope = scope
         self._excludeAlbums = excludeAlbums
+        self._fix = fix
+
 
     def __del__(self):
         del self._db
@@ -115,9 +118,26 @@ class Orchestrator:
 
             Log.Write(f"Put {n} of {len(items)} items from {self._src.GetType()} to {self._dst.GetType()}, {len(items)-n} items skipped")
 
+    def _putAlbums(self):
+        albums = self._db.GetAlbumsForSync()
+        Log.Write(f"Putting albums from {self._src.GetType()} to {self._dst.GetType()}...")
+        if len(albums) > 0:
+            n = 0 
+            for album in albums:
+                if album is None:
+                    continue
+                if album.DstId is None or album.Sync == 0:
+                    if self._dst.PutAlbum(album) and self._db.MarkAlbumSync(album):
+                        n += 1
+                    else:
+                        continue
+
+            Log.Write(f"Put {n} of {len(albums)} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(albums)-n} albums skipped")
+
+
     def _putLinks(self):
         links = self._db.GetLinksForSync()
-        Log.Write(f"Putting albums from {self._src.GetType()} to {self._dst.GetType()}...")
+        Log.Write(f"Putting links from {self._src.GetType()} to {self._dst.GetType()}...")
         if len(links) > 0:
             n = 0 
             nAlbums = 0
@@ -150,40 +170,110 @@ class Orchestrator:
 
             Log.Write(f"Put {n} of {len(links)} links and {nAlbums} albums from {self._src.GetType()} to {self._dst.GetType()}, {len(links)-n} links skipped")
 
+
     def _invokePut(self):
 
         Log.Write(f"Putting data from {self._src.GetType()} to {self._dst.GetType()}...")
         if self._scope == 'all' or self._scope == 'items':
             self._putItems()
         if self._scope == 'all' or self._scope == 'albums':
+            self._putAlbums()
+        if self._scope == 'all' or self._scope == 'links':
             self._putLinks()
 
         return True
 
     def _invokeCheck(self):
+
+        if self._fix and input(f"Are You sure to fix data at '{self._db.GetDBFile()}' (please run first time without '--fix' flag)? (Yes/No) ") != 'Yes':
+            return True
+
         if self._scope == 'all' or self._scope == 'items':
-            self._checkItems()
+            self._checkItems(self._fix)
         if self._scope == 'all' or self._scope == 'albums':
-            self._checkLinks()
+            self._checkAlbums(self._fix)
+        if self._scope == 'all' or self._scope == 'links':
+            self._checkLinks(self._fix)
 
         return True
 
-    def _checkItems(self):
+    def _checkItems(self, fix=False):
         items = self._db.GetItemsForCheck()
         Log.Write(f"Checking items for {self._dst.GetType()}...")
         if len(items) > 0:
-            exists = 0 
+            correct = 0 
             missed = 0
+            restored = 0
             for item in items:
-                if self._dst.CheckItem(item):
-                    exists += 1
-                else:
+                exists = self._dst.CheckItem(item)
+                if exists and item.Sync != 0:
+                    correct += 1
+                if not exists and item.Sync == 0:
+                    correct += 1
+                if exists and item.Sync == 0:
+                    restored += 1
+                    if fix:
+                        self._db.MarkItemSync(item, 1)
+                if not exists and item.Sync != 0:
                     missed += 1
+                    if fix:
+                        self._db.MarkItemSync(item, 0)
 
-            Log.Write(f"Check {len(items)} items from {self._src.GetType()}, {exists} items exist, {missed} items missed")
+            Log.Write(f"Check {len(items)} items from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
 
         return
 
-    def _checkLinks(self):
+    def _checkAlbums(self, fix=False):
+        albums = self._db.GetAlbumsForCheck()
+        Log.Write(f"Checking albums for {self._dst.GetType()}...")
+        if len(albums) > 0:
+            correct = 0 
+            missed = 0
+            restored = 0
+            for album in albums:
+                exists = self._dst.CheckAlbum(album)
+                if exists and album.Sync != 0:
+                    correct += 1
+                if not exists and album.Sync == 0:
+                    correct += 1
+                if exists and album.Sync == 0:
+                    restored += 1
+                    if fix:
+                        self._db.MarkAlbumSync(album, 1)
+                if not exists and album.Sync != 0:
+                    missed += 1
+                    if fix:
+                        self._db.MarkAlbumSync(album, 0)
+
+            Log.Write(f"Check {len(albums)} albums from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
+        
+        return
+
+    def _checkLinks(self, fix=False):
+        links = self._db.GetLinksForCheck()
+        Log.Write(f"Checking links for {self._dst.GetType()}...")
+        if len(links) > 0:
+            correct = 0 
+            missed = 0
+            restored = 0
+            for link in links:
+                album = self._db.GetAlbum(link.AlbumId)
+                item = self._db.GetItem(link.ItemId)
+
+                exists = self._dst.CheckLink(item, album, link)
+                if exists and link.Sync != 0:
+                    correct += 1
+                if not exists and link.Sync == 0:
+                    correct += 1
+                if exists and link.Sync == 0:
+                    restored += 1
+                    if fix:
+                        self._db.MarkLinkSync(link, 1)
+                if not exists and link.Sync != 0:
+                    missed += 1
+                    if fix:
+                        self._db.MarkLinkSync(link, 0)
+
+            Log.Write(f"Check {len(links)} links from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
         
         return
