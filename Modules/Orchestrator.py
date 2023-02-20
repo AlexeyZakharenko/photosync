@@ -213,11 +213,11 @@ class Orchestrator:
                 if exists and item.Sync == 0:
                     restored += 1
                     if fix:
-                        self._db.MarkAlbumSync(item, 1)
+                        self._db.MarkItemSync(item, 1)
                 if not exists and item.Sync != 0:
                     missed += 1
                     if fix:
-                        self._db.MarkAlbumSync(item, 0)
+                        self._db.MarkItemSync(item, 0)
 
             Log.Write(f"Check {len(items)} items from {self._src.GetType()}, {correct} correct, {missed} missed, {restored} unexpected exist")
 

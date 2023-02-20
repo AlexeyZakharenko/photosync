@@ -264,11 +264,11 @@ sync INTEGER NOT NULL)
         result = []
         try:
             cursor = self._connection.cursor()
-            cursor.execute(f"SELECT srcId, filename FROM {TABLE_ITEMS} WHERE sync = ?", (0,))
+            cursor.execute(f"SELECT srcId, filename, dstId, sync FROM {TABLE_ITEMS} WHERE sync = ?", (0,))
             records = cursor.fetchall()
             if not records is None:
                 for record in records:
-                    result.append(Item.Item(record[0],record[1]))
+                    result.append(Item.Item(record[0],record[1],dstId=record[2]))
 
             Log.Write(f"Got {len(result)} items to sync")
         
@@ -457,10 +457,10 @@ sync INTEGER NOT NULL)
 
         else:
             if scope == 'all' or scope =='items':
-                cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?, dstId = ?", (0, None, ))
+                cursor.execute(f"UPDATE {TABLE_ITEMS} SET sync = ?", (0, ))
                 Log.Write(f"Clean sync flags in table {TABLE_ITEMS}")
             if scope == 'all' or scope =='albums':
-                cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?, dstId = ?", (0, None, ))
+                cursor.execute(f"UPDATE {TABLE_ALBUMS} SET sync = ?", (0, ))
                 Log.Write(f"Clean sync flags in table {TABLE_ALBUMS}")
                 cursor.execute(f"UPDATE {TABLE_LINKS} SET sync = ?", (0, ))
                 Log.Write(f"Clean sync flags in table {TABLE_LINKS}")

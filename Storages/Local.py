@@ -127,6 +127,10 @@ class Local:
 
     def CheckItem(self, item, type='dst'):
         id = item.DstId if type == 'dst' else item.SrcId; 
+        if id is None:
+            Log.Write(f"Item '{item.Filename}' with empty {type} id ({item.SrcId} {item.DstId})")
+            return False
+
         itemPath = path.join(self._photosdir, id)
 
         if not path.exists(itemPath):
