@@ -3,7 +3,7 @@
 
 # Required https://pypi.org/project/exif/
 # pip install exif
-
+# pip install moviepy
 
 # Interface for sources
 #
@@ -22,8 +22,11 @@
 
 from pathlib import Path
 from os import path, utime, mkdir, link, listdir
-from datetime import datetime
+from datetime import datetime, timezone
+import re
 from exif import Image
+
+from moviepy import VideoFileClip
 
 import Modules.Log as Log
 import Modules.Item as Item
@@ -306,7 +309,48 @@ class LocalTools:
             except:
                 dt = None
 
+        if type == 'video':
+            try:
+                vid = VideoFileClip(filePath);
+                dt = datetime.fromisoformat(vid.reader.infos['metadata']['creation_time'].replace('Z', '+00:00'));
+            except:
+                dt = None
+
+
         if dt == None:
-           dt = datetime.utcfromtimestamp(path.getmtime(filePath)) 
+            # попробуем вынуть из имени файла
+            try: 
+                name = path.basename(filePath);
+    
+                # Поиск по регулярному выражению
+                match = re.match(r'.*(\d{8})(.*)', name);
+
+
+                if match:
+                    # Извлечение групп
+                    strDate = match.group(1);
+                    rest = match.group(2);
+
+                    dt = datetime.strptime(strDate, "%Y%m%d");
+
+                    match = re.match(r'(\d{6})', rest);
+    
+                    if match:
+                        # Извлечение групп
+                        strTime = match.group(1);
+                        try:
+                            dt = datetime.strptime(strDate+' '+strTime, "%Y%m%d %H%M%S");
+                        except:
+                            pass;
+
+            
+                    if dt > datetime.now():
+                        dt = None;
+            except:
+                dt = None;
+
+        # Ничего не помогло - берем дату файла            
+        if dt == None:
+            dt =  datetime.fromtimestamp(Path(filePath).stat().st_mtime, timezone.utc)
 
         return dt
